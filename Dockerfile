@@ -23,6 +23,14 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
 
+RUN if [ ! -d "prisma/migrations" ] || [ -z "$(ls -A prisma/migrations 2>/dev/null)" ]; then \
+    echo "Generating initial migration..."; \
+    npx prisma migrate diff \
+      --from-empty \
+      --to-schema-datamodel prisma/schema.prisma \
+      --script > prisma/migration.sql 2>/dev/null || true; \
+    fi
+
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
@@ -38,8 +46,10 @@ FROM base AS migrator
 WORKDIR /app
 # We need node_modules (incl. devDeps for prisma CLI), code, and schema
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY migrate.sh ./migrate.sh
 COPY . .
-ENTRYPOINT ["npx", "prisma", "migrate", "deploy", "--schema=/app/prisma/schema.prisma"]
+ENTRYPOINT ["./migrate.sh"]
 
 
 

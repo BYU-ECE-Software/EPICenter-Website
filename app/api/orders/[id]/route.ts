@@ -1,0 +1,70 @@
+// =============================================
+// FILE: app/api/orders/[id]/route.ts
+// =============================================
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+// GET /api/orders/[id]
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string}> }
+) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt((await params).id) },
+      include: {
+        user: true,
+        orderType: true,
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(order);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 });
+  }
+}
+
+// PUT /api/orders/[id]
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string}> }
+) {
+  try {
+    const body = await request.json();
+    const { item, priceCents, orderTypeId, status } = body;
+
+    const order = await prisma.order.update({
+      where: { id: parseInt((await params).id) },
+      data: {
+        item,
+        priceCents,
+        orderTypeId,
+        status,
+      },
+    });
+
+    return NextResponse.json(order);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
+  }
+}
+
+// DELETE /api/orders/[id]
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string}> }
+) {
+  try {
+    await prisma.order.delete({
+      where: { id: parseInt((await params).id) },
+    });
+
+    return NextResponse.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to delete order' }, { status: 500 });
+  }
+}

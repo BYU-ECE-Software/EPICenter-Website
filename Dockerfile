@@ -23,21 +23,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
 
-RUN if [ ! -d "prisma/migrations" ] || [ -z "$(ls -A prisma/migrations 2>/dev/null)" ]; then \
-    echo "Generating initial migration..."; \
-    npx prisma migrate diff \
-      --from-empty \
-      --to-schema-datamodel prisma/schema.prisma \
-      --script > prisma/migration.sql 2>/dev/null || true; \
-    fi
-
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED 1
-
-# RUN yarn build
-
 # If using npm comment out above and use below instead
 RUN npm run build
 
@@ -47,8 +32,9 @@ WORKDIR /app
 # We need node_modules (incl. devDeps for prisma CLI), code, and schema
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
+COPY package.json ./
 COPY migrate.sh ./migrate.sh
-COPY . .
+RUN chmod +x ./migrate.sh 
 ENTRYPOINT ["./migrate.sh"]
 
 
@@ -82,8 +68,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --chown=nextjs:nodejs entry.sh ./entry.sh
 RUN chmod +x /app/entry.sh
 
-RUN apk add --no-cache postgresql-client
-RUN apk add --no-cache curl
+RUN apk add --no-cache postgresql-client curl
 
 USER nextjs
 

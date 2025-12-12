@@ -12,18 +12,19 @@
     "prisma:migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
-    "@prisma/client": "^6.17.1",
     "@prisma/extension-accelerate": "^2.0.2",
     "next": "^15.5.7",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
+    "@prisma/client": "^6.19.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "prisma": "^6.17.1",
+    "prisma": "^6.19.1",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"

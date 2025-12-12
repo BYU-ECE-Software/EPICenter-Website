@@ -13,3 +13,11 @@ services:
 
 volumes:
   db_data:
+
+# To migrate using this file:
+# Change the DATABASE_URL in .env to use localhost instead of db as the host
+# Then run: npx prisma generate
+# Then run: docker compose -f docker-compose.migrate.yaml -d
+# Run: npx prisma migrate dev
+# When done, stop and remove the migration container: docker compose down
+# Finally, change the DATABASE_URL in .env back to use db as the host

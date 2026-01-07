@@ -1,0 +1,21 @@
+{
+  "devFiles": [],
+  "ampDevFiles": [],
+  "polyfillFiles": [
+    "static/chunks/8b612_next_dist_build_polyfills_polyfill-nomodule.js"
+  ],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [
+    "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_5ca0a9ad._.js",
+    "static/chunks/8b612_next_dist_compiled_react-dom_aa8feb26._.js",
+    "static/chunks/8b612_next_dist_compiled_next-devtools_index_57de9d09.js",
+    "static/chunks/8b612_next_dist_compiled_264fa7e4._.js",
+    "static/chunks/8b612_next_dist_client_1c67a411._.js",
+    "static/chunks/8b612_next_dist_a3dc59b5._.js",
+    "static/chunks/8b612_@swc_helpers_cjs_a9404790._.js",
+    "static/chunks/EPICenter-Website_a0ff3932._.js",
+    "static/chunks/turbopack-EPICenter-Website_e0daa227._.js"
+  ],
+  "pages": {},
+  "ampFirstPages": []
+}

@@ -1,15 +1,203 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Prisma schema for Users and Orders
+// Run: npx prisma generate (locally)
+// In containers: we use `npx prisma migrate deploy` at runtime
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// ========== Enums ==========
+
+enum OrderStatus {
+    PENDING
+    PROCESSING
+    READY_FOR_PICKUP
+    COMPLETED
+    CANCELLED
+}
+
+enum EquipmentStatus {
+    AVAILABLE
+    ON_LOAN
+    MAINTENANCE
+    RETIRED
+}
+
+enum LoanStatus {
+    ONGOING
+    RETURNED
+    OVERDUE
+}
+
+// ========== Models ==========
+
+// =====================
+//      MODEL: User
+// =====================
+
+model User {
+    id        Int        @id @default(autoincrement())
+    email     String     @unique
+    name      String?
+    netID     String?    @unique
+    byuID     String?    @unique
+    createdAt DateTime   @default(now())
+    updatedAt DateTime   @updatedAt
+    
+    // Relations
+    orders    Order[]
+    purchases Purchase[]
+    loans     Loan[]
+
+    @@index([email])
+    @@index([netID])
+}
+
+
+// =====================
+//      MODEL: Order
+// =====================
+
+model Order {
+    id            Int         @id @default(autoincrement())
+    userId        Int
+    item          String
+    priceCents    Int
+    orderTypeId   Int
+    status        OrderStatus @default(PENDING)
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
+    
+    // Relations
+    user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    orderType     OrderType   @relation(fields: [orderTypeId], references: [id])
+
+    @@index([userId])
+    @@index([orderTypeId])
+    @@index([status])
+}
+
+// =====================
+//   MODEL: OrderType
+// =====================
+
+model OrderType {
+    id          Int      @id @default(autoincrement())
+    name        String   @unique
+    description String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    // Relations
+    orders      Order[]
+}
+
+// =====================
+//   MODEL: Item
+// =====================
+
+model Item {
+    id          Int      @id @default(autoincrement())
+    name        String
+    priceCents  Int
+    photoURL    String?
+    description String?
+    location    String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    
+    // Relations
+    purchases   Purchase[]
+
+    @@index([name])
+}
+
+// =====================
+//   MODEL: Purchase
+// =====================
+
+model Purchase {
+    id                 Int              @id @default(autoincrement())
+    userId             Int
+    itemId             Int
+    purchasingGroupId  Int?
+    quantity           Int              @default(1)
+    totalCents         Int
+    createdAt          DateTime         @default(now())
+    updatedAt          DateTime         @updatedAt
+    
+    // Relations
+    user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+    item               Item             @relation(fields: [itemId], references: [id])
+    purchasingGroup    PurchasingGroup? @relation(fields: [purchasingGroupId], references: [id])
+
+    @@index([userId])
+    @@index([itemId])
+    @@index([purchasingGroupId])
+}
+
+// =====================
+//   MODEL: PurchasingGroup
+// =====================
+
+model PurchasingGroup {
+    id          Int        @id @default(autoincrement())
+    name        String
+    description String?
+    createdAt   DateTime   @default(now())
+    updatedAt   DateTime   @updatedAt
+    
+    // Relations
+    purchases   Purchase[]
+}
+
+// =====================
+//   MODEL: Equipment
+// =====================
+
+model Equipment {
+    id           Int             @id @default(autoincrement())
+    name         String
+    serialNumber String          @unique
+    location     String?
+    pictureURL   String?
+    status       EquipmentStatus @default(AVAILABLE)
+    createdAt    DateTime        @default(now())
+    updatedAt    DateTime        @updatedAt
+    
+    // Relations
+    loans        Loan[]
+
+    @@index([serialNumber])
+    @@index([status])
+}
+
+
+// =====================
+//   MODEL: Loan
+// =====================
+
+model Loan {
+    id          Int        @id @default(autoincrement())
+    userId      Int
+    equipmentId Int
+    loanDate    DateTime   @default(now())
+    returnDate  DateTime?
+    status      LoanStatus @default(ONGOING)
+    createdAt   DateTime   @default(now())
+    updatedAt   DateTime   @updatedAt
+    
+    // Relations
+    user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+    equipment   Equipment  @relation(fields: [equipmentId], references: [id])
+
+    @@index([userId])
+    @@index([equipmentId])
+    @@index([status])
 }

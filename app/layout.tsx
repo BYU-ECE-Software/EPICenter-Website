@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import HeaderBar from "@/components/HeaderBar";
 import FooterBar from "@/components/FooterBar";
+import { RoleProvider } from "./providers/RoleProvider";
 
 export const metadata: Metadata = {
   title: "EPICenter Site",
@@ -30,9 +31,12 @@ export default function RootLayout({
         <link rel="icon" href="/BYU_Block_Y_white.svg" type="image/svg+xml" />
       </head>
       <body className="min-h-screen bg-gray-50 text-gray-900">
-        <HeaderBar />
-        <div className="w-full">{children}</div>
-        <FooterBar />
+        <RoleProvider>
+          {" "}
+          <HeaderBar />
+          <div className="w-full">{children}</div>
+          <FooterBar />
+        </RoleProvider>
       </body>
     </html>
   );

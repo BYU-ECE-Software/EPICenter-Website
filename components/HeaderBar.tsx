@@ -2,7 +2,8 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { FiChevronDown } from "react-icons/fi";
+import { useRole } from "@/app/providers/RoleProvider";
+import { FiChevronDown, FiShoppingCart } from "react-icons/fi";
 
 const HeaderBar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,6 +12,10 @@ const HeaderBar: React.FC = () => {
   // refs + measured left padding for desktop white nav
   const logoRef = useRef<HTMLAnchorElement | null>(null);
   const [navPadLeft, setNavPadLeft] = useState<number>(128); // fallback ~ px-32
+
+  // role state
+  const { role, setRole } = useRole();
+  const isEmployee = role === "employee";
 
   useLayoutEffect(() => {
     const update = () => {
@@ -50,14 +55,46 @@ const HeaderBar: React.FC = () => {
                 className="h-10 w-auto"
               />
             </a>
-            <h1 className="text-2xl">EPICenter Site</h1>
+            <h1 className="text-2xl">Experiential Learning Center</h1>
           </div>
 
           {/* Right side: static label + mobile hamburger */}
           <div className="flex items-center gap-3 pr-6 text-base">
-            <span className="hidden sm:inline text-white/80">
-              Welcome, name
-            </span>
+            <div className="hidden sm:flex items-center gap-3 text-white/80">
+              <span>
+                Welcome,{" "}
+                <span className="text-white font-medium">
+                  {isEmployee ? "Employee" : "Student"}
+                </span>
+              </span>
+
+              {/* Role toggle */}
+              <button
+                type="button"
+                onClick={() => setRole(isEmployee ? "student" : "employee")}
+                className="relative inline-flex h-6 w-12 items-center rounded-full bg-white/25 transition hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/40"
+                aria-label="Toggle role"
+                aria-pressed={isEmployee}
+              >
+                <span className="sr-only">
+                  Toggle between Student and Employee view
+                </span>
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
+                    isEmployee ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Cart icon */}
+            <Link
+              href="/cart"
+              className="hidden sm:inline-flex items-center justify-center p-2  focus:outline-none cursor-pointer"
+              aria-label="View cart"
+            >
+              <FiShoppingCart className="h-6 w-6 text-white" />
+            </Link>
 
             <button
               type="button"
@@ -89,6 +126,15 @@ const HeaderBar: React.FC = () => {
               className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
             >
               Home
+            </Link>
+
+            <Link
+              href="/cart"
+              onClick={() => setMobileOpen(false)}
+              className="px-6 py-4 text-left hover:bg-[#FAFAFA] flex items-center gap-2"
+            >
+              <FiShoppingCart className="h-5 w-5 text-byu-navy mr-3" />
+              <span>Cart</span>
             </Link>
 
             <Link

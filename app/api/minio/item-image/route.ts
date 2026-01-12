@@ -9,6 +9,11 @@ function extFromFilename(name: string) {
   return i >= 0 ? name.slice(i).toLowerCase() : "";
 }
 
+// reads photo from FormData
+// generates a random key
+// uploads the bytes to MinIO
+// store that key in Item.photoURL
+
 export async function POST(req: Request) {
   try {
     const form = await req.formData();

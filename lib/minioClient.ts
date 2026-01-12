@@ -22,5 +22,5 @@ export const minioClient = new Client({
   secretKey,
 });
 
-// Keey Bucket names centralized
+// Key Bucket names centralized
 export const ITEM_IMAGES_BUCKET = "item-images";

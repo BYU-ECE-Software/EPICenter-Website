@@ -10,6 +10,7 @@ export type PaginationProps = {
   pageSize: number;
   setPageSize: (size: number) => void;
 
+  itemLabel?: string; // e.g. "Orders", "Items", "Equipment"
   pageSizeOptions?: number[]; // optional override
   delta?: number; // pages shown on each side of current
   className?: string;
@@ -21,6 +22,7 @@ export default function Pagination({
   onPageChange,
   pageSize,
   setPageSize,
+  itemLabel = "Items",
   pageSizeOptions = [10, 25, 50, 100],
   delta = 1,
   className = "",
@@ -140,7 +142,7 @@ export default function Pagination({
       {/* Page size */}
       <div className="flex items-center gap-2">
         <label htmlFor="pageSize" className="text-sm text-byu-navy font-normal">
-          Orders per page:
+          {itemLabel} per page:
         </label>
         <select
           id="pageSize"

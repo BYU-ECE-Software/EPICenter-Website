@@ -8,6 +8,8 @@ import BaseModal from "@/components/BaseModal";
 import Pagination from "@/components/Pagination";
 import RowActionMenu from "@/components/RowActionMenu";
 import ConfirmModal from "@/components/ConfirmModal";
+import { formatDBStrings } from "@/lib/utils/formatDBStrings";
+import { statusToBadgeClasses } from "@/lib/utils/statusBadge";
 import Toast, { type ToastType } from "@/components/Toast";
 import { useRole } from "../providers/RoleProvider";
 import {
@@ -218,7 +220,20 @@ export default function LabEquipmentPage() {
     { key: "name", header: "Name" },
     { key: "serialNumber", header: "Serial Number" },
     { key: "location", header: "Location" },
-    { key: "status", header: "Status" },
+    {
+      key: "status",
+      header: "Status",
+      render: (row: any) => (
+        <span
+          className={[
+            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap",
+            statusToBadgeClasses(row.status),
+          ].join(" ")}
+        >
+          {formatDBStrings(row.status)}
+        </span>
+      ),
+    },
     {
       key: "actions",
       header: "",

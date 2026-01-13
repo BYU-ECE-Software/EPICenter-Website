@@ -400,6 +400,7 @@ export default function LabEquipmentPage() {
         onPageChange={setCurrentPage}
         pageSize={pageSize}
         setPageSize={setPageSize}
+        itemLabel="Equipment"
       />
 
       {/* Create/edit Equipment Form Modal */}

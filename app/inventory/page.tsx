@@ -477,6 +477,7 @@ export default function InventoryPage() {
         onPageChange={setCurrentPage}
         pageSize={pageSize}
         setPageSize={setPageSize}
+        itemLabel="Items"
       />
 
       {/* Create/Edit Item Form Modal */}

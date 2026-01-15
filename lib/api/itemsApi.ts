@@ -1,22 +1,5 @@
 // Item Type
-export type Item = {
-  id: number;
-  name: string;
-  priceCents: number;
-  photoURL: string | null;
-  description: string;
-  location: string;
-  purchases?: any[];
-};
-
-// ItemPayload for Create/Edit
-export type ItemPayload = {
-  name: string;
-  priceCents: number;
-  description: string;
-  location: string;
-  photoURL?: string | null;
-};
+import type { Item, ItemPayload } from "@/types/item";
 
 // -------- Create Item --------
 export async function createItem(payload: ItemPayload) {

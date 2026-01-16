@@ -88,13 +88,15 @@ const HeaderBar: React.FC = () => {
             </div>
 
             {/* Cart icon */}
-            <Link
-              href="/cart"
-              className="hidden sm:inline-flex items-center justify-center p-2  focus:outline-none cursor-pointer"
-              aria-label="View cart"
-            >
-              <FiShoppingCart className="h-6 w-6 text-white" />
-            </Link>
+            {isEmployee && (
+              <Link
+                href="/cart"
+                className="hidden sm:inline-flex items-center justify-center p-2  focus:outline-none cursor-pointer"
+                aria-label="View cart"
+              >
+                <FiShoppingCart className="h-6 w-6 text-white" />
+              </Link>
+            )}
 
             <button
               type="button"
@@ -128,14 +130,16 @@ const HeaderBar: React.FC = () => {
               Home
             </Link>
 
-            <Link
-              href="/cart"
-              onClick={() => setMobileOpen(false)}
-              className="px-6 py-4 text-left hover:bg-[#FAFAFA] flex items-center gap-2"
-            >
-              <FiShoppingCart className="h-5 w-5 text-byu-navy mr-3" />
-              <span>Cart</span>
-            </Link>
+            {isEmployee && (
+              <Link
+                href="/cart"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA] flex items-center gap-2"
+              >
+                <FiShoppingCart className="h-5 w-5 text-byu-navy mr-3" />
+                <span>Cart</span>
+              </Link>
+            )}
 
             <Link
               href="/inventory"

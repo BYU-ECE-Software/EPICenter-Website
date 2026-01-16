@@ -15,3 +15,10 @@ export type Loan = {
   user: User;
   equipment: Equipment;
 };
+
+export type CreateLoanPayload = {
+  userId: number;
+  equipmentId: number;
+  returnDate?: string; // ISO string
+  status?: LoanStatus;
+};

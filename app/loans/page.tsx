@@ -6,6 +6,11 @@ import DataTable from "@/components/DataTable";
 import Pagination from "@/components/Pagination";
 import { fetchLoans } from "@/lib/api/loansApi";
 import type { Loan } from "@/types/loan";
+import { useRouter } from "next/navigation";
+import { useRole } from "@/app/providers/RoleProvider";
+import { FiCornerDownLeft } from "react-icons/fi";
+import { formatDBStrings } from "@/lib/utils/formatDBStrings";
+import { statusToBadgeClasses } from "@/lib/utils/statusBadge";
 
 // Action button that goes in the last column of the data table.
 function RowActions({
@@ -19,10 +24,11 @@ function RowActions({
     <div className="flex items-center justify-end">
       <button
         type="button"
-        className="inline-flex items-center gap-2 rounded-lg bg-byu-royal px-3 py-2 text-white text-xs font-medium hover:bg-[#003C9E] transition cursor-pointer"
+        className="inline-flex items-center gap-2 rounded-lg bg-byu-royal px-1.5 py-1.5 text-white text-xs font-medium hover:bg-[#003C9E] transition cursor-pointer"
         onClick={() => onCheckIn(row)}
       >
-        Check-in
+        <FiCornerDownLeft className="h-4 w-4" />
+        <span>Check-in</span>
       </button>
     </div>
   );
@@ -40,6 +46,18 @@ export default function LoansPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const totalPages = 5; // fake for now
+
+  // Role for student vs employee auth
+  const router = useRouter();
+  const { role } = useRole();
+  const isEmployee = role === "employee";
+
+  // Page only loads when user has employee role. Redirects to home page if in student view
+  useEffect(() => {
+    if (!isEmployee) {
+      router.replace("/");
+    }
+  }, [isEmployee, router]);
 
   // Load loans once on page load
   useEffect(() => {
@@ -129,8 +147,22 @@ export default function LoansPage() {
     },
     {
       key: "returnDate",
-      header: "Return Date",
+      header: "Due Date",
       render: (row: Loan) => formatDate(row?.returnDate),
+    },
+    {
+      key: "loanStatus",
+      header: "Status",
+      render: (row: any) => (
+        <span
+          className={[
+            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap",
+            statusToBadgeClasses(row?.status),
+          ].join(" ")}
+        >
+          {formatDBStrings(row?.status)}
+        </span>
+      ),
     },
     {
       key: "actions",

@@ -168,13 +168,15 @@ const HeaderBar: React.FC = () => {
               />
             </button>
 
-            <Link
-              href="/loans"
-              onClick={() => setMobileOpen(false)}
-              className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
-            >
-              Loans
-            </Link>
+            {isEmployee && (
+              <Link
+                href="/loans"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
+              >
+                Loans
+              </Link>
+            )}
 
             {projectRequestsOpen && (
               <div className="flex flex-col text-sm">
@@ -286,13 +288,15 @@ const HeaderBar: React.FC = () => {
               </div>
             )}
           </div>
-          {/* Loans tab */}
-          <Link
-            href="/loans"
-            className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
-          >
-            Loans
-          </Link>
+          {/* Loans tab (employee only) */}
+          {isEmployee && (
+            <Link
+              href="/loans"
+              className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
+            >
+              Loans
+            </Link>
+          )}
         </div>
       </nav>
     </div>

@@ -18,15 +18,16 @@ import {
   FiMoreVertical,
   FiPlus,
   FiTrash2,
+  FiCornerDownLeft,
 } from "react-icons/fi";
 import {
   createLabEquipment,
   fetchLabEquipment,
   updateLabEquipment,
   deleteLabEquipment,
-  type Equipment,
-  type EquipmentPayload,
 } from "../../lib/api/labEquipmentApi";
+import type { Equipment, EquipmentPayload } from "@/types/equipment";
+import { createLoan } from "@/lib/api/loansApi";
 
 // Action Buttons that go in the last column of the data table.
 function RowActions({
@@ -40,18 +41,22 @@ function RowActions({
   onEdit: (row: any) => void;
   onRemove: (row: any) => void;
 }) {
+  const isOnLoan = row.status === "ON_LOAN";
+
   return (
     <div className="flex items-center justify-end gap-1">
-      {/* Loan Button */}
-      <button
-        type="button"
-        title="Loan"
-        className="inline-flex items-center gap-2 rounded-lg bg-byu-royal px-2 py-2 text-white text-xs font-medium hover:bg-[#003C9E] transition cursor-pointer"
-        onClick={() => onLoan(row)}
-      >
-        <FiClipboard className="h-4 w-4" />
-        <span>Loan</span>
-      </button>
+      {/* Loan Button (ONLY when not on loan) */}
+      {!isOnLoan && (
+        <button
+          type="button"
+          title="Loan"
+          className="inline-flex items-center gap-2 rounded-lg px-1.5 py-1.5 text-xs font-medium transition cursor-pointer border bg-byu-royal text-white border-byu-royal hover:bg-[#003C9E]"
+          onClick={() => onLoan(row)}
+        >
+          <FiClipboard className="h-4 w-4" />
+          <span>Loan</span>
+        </button>
+      )}
 
       {/* Pop up with additional Edit and Remove options */}
       <RowActionMenu
@@ -120,7 +125,14 @@ export default function LabEquipmentPage() {
   const [selectedLoanRow, setSelectedLoanRow] = useState<Equipment | null>(
     null
   );
-  const isLoanValid = Boolean(loanDueDate);
+  const [loanUserId, setLoanUserId] = useState(""); // keep as string for the input
+  const parsedUserId = Number(loanUserId);
+  const isUserIdValid =
+    loanUserId.trim().length > 0 &&
+    Number.isInteger(parsedUserId) &&
+    parsedUserId > 0;
+
+  const isLoanValid = Boolean(loanDueDate) && isUserIdValid;
 
   // Toast State
   const [toast, setToast] = useState<{
@@ -154,6 +166,7 @@ export default function LabEquipmentPage() {
   const openLoan = (row: any) => {
     setSelectedLoanRow(row);
     setLoanDueDate("");
+    setLoanUserId("");
     setLoanOpen(true);
   };
 
@@ -161,19 +174,45 @@ export default function LabEquipmentPage() {
     setLoanOpen(false);
     setSelectedLoanRow(null);
     setLoanDueDate("");
+    setLoanUserId("");
   };
 
   const submitLoan = async () => {
-    if (!loanDueDate) return;
-    console.log("loan submit", { row: selectedLoanRow, dueDate: loanDueDate });
-    closeLoan();
+    if (!isLoanValid || !selectedLoanRow?.id) return;
 
-    // toast
-    showToast(
-      "success",
-      "Loan submitted",
-      `"${selectedLoanRow?.name ?? "Equipment"}" was put on loan.`
-    );
+    try {
+      // due date from <input type="date"> is "YYYY-MM-DD"
+      // Convert to ISO so Prisma DateTime is happy.
+      const returnDateIso = new Date(
+        `${loanDueDate}T00:00:00.000Z`
+      ).toISOString();
+
+      await createLoan({
+        userId: parsedUserId,
+        equipmentId: selectedLoanRow.id,
+        returnDate: returnDateIso,
+        // loanDate/status optional; Prisma defaults handle them
+      });
+
+      // refresh equipment so status flips to ON_LOAN after your backend update
+      const refreshed = await fetchLabEquipment();
+      setEquipment(refreshed);
+
+      closeLoan();
+
+      showToast(
+        "success",
+        "Loan created",
+        `"${selectedLoanRow?.name ?? "Equipment"}" was put on loan.`
+      );
+    } catch (err) {
+      console.error("Create loan failed:", err);
+      showToast(
+        "error",
+        "Loan failed",
+        "Could not create the loan. Check the User ID and try again."
+      );
+    }
   };
 
   // Remove handlers
@@ -362,19 +401,24 @@ export default function LabEquipmentPage() {
 
       <h1 className="text-3xl font-bold text-byu-navy">Lab Equipment</h1>
 
-      {/* Search + actions row (keep your styling) */}
+      {/* Search + actions row  */}
       <div className="mt-6 mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Create New Equipment Button */}
-        {isEmployee && (
-          <PrimaryButton
-            label="Create New Equipment"
-            icon={<FiPlus className="w-4 h-4" />}
-            bgClass="bg-white text-byu-royal"
-            hoverBgClass="hover:bg-gray-50"
-            className="border border-byu-royal text-sm"
-            onClick={openCreateEquipment}
-          />
-        )}
+        {/* Left: actions (employee) OR empty spacer (student) */}
+        <div className="flex items-center">
+          {isEmployee ? (
+            <PrimaryButton
+              label="Create New Equipment"
+              icon={<FiPlus className="w-4 h-4" />}
+              bgClass="bg-white text-byu-royal"
+              hoverBgClass="hover:bg-gray-50"
+              className="border border-byu-royal text-sm"
+              onClick={openCreateEquipment}
+            />
+          ) : (
+            // spacer keeps layout stable so SearchBar stays on the right
+            <div className="h-10" />
+          )}
+        </div>
 
         {/* Right: Search Bar */}
         <SearchBar
@@ -488,16 +532,39 @@ export default function LabEquipmentPage() {
         submitDisabled={!isLoanValid}
       >
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-byu-navy">
-            Due date
-          </label>
+          {/* Loanee User ID */}
+          <div>
+            <label className="block text-sm font-medium text-byu-navy mb-1">
+              User ID *
+            </label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              className="w-full rounded-md border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
+              placeholder="Enter loanee user id..."
+              value={loanUserId}
+              onChange={(e) => setLoanUserId(e.target.value)}
+            />
+            {!loanUserId.trim() ? null : !isUserIdValid ? (
+              <p className="mt-1 text-xs text-red-600">
+                Enter a valid positive integer User ID.
+              </p>
+            ) : null}
+          </div>
 
-          <input
-            type="date"
-            className="w-full rounded-md border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-            value={loanDueDate}
-            onChange={(e) => setLoanDueDate(e.target.value)}
-          />
+          {/* Due Date */}
+          <div>
+            <label className="block text-sm font-medium text-byu-navy mb-1">
+              Due date *
+            </label>
+            <input
+              type="date"
+              className="w-full rounded-md border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
+              value={loanDueDate}
+              onChange={(e) => setLoanDueDate(e.target.value)}
+            />
+          </div>
         </div>
       </BaseModal>
 

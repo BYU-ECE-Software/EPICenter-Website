@@ -17,9 +17,8 @@ import {
   updateItem,
   deleteItem,
   uploadItemPhoto,
-  type ItemPayload,
-  type Item,
 } from "../../lib/api/itemsApi";
+import type { Item, ItemPayload } from "@/types/item";
 import { formatCents } from "../../lib/utils/money";
 import {
   FiPlus,

@@ -1,27 +1,10 @@
-// Equipment Type
-export type Equipment = {
-  id: number;
-  name: string;
-  serialNumber: string;
-  location: string | null;
-  status: "AVAILABLE" | "ON_LOAN" | "MAINTENANCE" | "RETIRED";
-};
-
-// EquipmentPayload for Create/Edit
-export type EquipmentPayload = {
-  name: string;
-  serialNumber: string;
-  location?: string | null;
-  status?: Equipment["status"];
-};
+import type { Equipment, EquipmentPayload } from "@/types/equipment";
 
 // --------Create Equipment --------
 export async function createLabEquipment(payload: EquipmentPayload) {
   const res = await fetch("/api/equipment", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
@@ -34,7 +17,7 @@ export async function createLabEquipment(payload: EquipmentPayload) {
 }
 
 // --------Get Equipment --------
-export async function fetchLabEquipment() {
+export async function fetchLabEquipment(): Promise<Equipment[]> {
   const res = await fetch("/api/equipment", { method: "GET" });
   if (!res.ok)
     throw new Error((await res.text()) || "Failed to fetch equipment");

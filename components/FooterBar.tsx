@@ -57,43 +57,21 @@ const FooterBar: React.FC = () => {
         <div className="text-center">
           <h1 className="text-xl font-bold">Brigham Young University</h1>
           <p className="mt-2 text-sm text-white">
-            450 Engineering Building
+            416 Clyde Building (CB)
             <br />
             Provo, UT 84602
             <br />
-            (801) 422-4012
+            <br />
+            Monday - Friday: 8am-5pm
+            <br />
+            Saturday & Sunday: Closed
           </p>
         </div>
 
         {/* Right Section: Social Media */}
         <div className="text-center">
-          <h2 className="text-xl font-bold">Connect With Us</h2>
-          <div className="mt-2 flex justify-center space-x-4">
-            <a
-              href="https://www.facebook.com/BYUECE"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white hover:text-white"
-            >
-              <FaFacebook />
-            </a>
-            <a
-              href="https://twitter.com/BYUECE"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white hover:text-white"
-            >
-              <FaTwitter />
-            </a>
-            <a
-              href="https://www.linkedin.com/school/byu/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white hover:text-white"
-            >
-              <FaLinkedin />
-            </a>
-          </div>
+          <h2 className="text-xl font-bold">Contact Us</h2>
+          <p className="mt-2 text-sm text-white">(801)-422-4279</p>
         </div>
       </div>
 

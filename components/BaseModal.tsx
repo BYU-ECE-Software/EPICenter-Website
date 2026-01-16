@@ -12,9 +12,9 @@ type BaseModalProps = {
   size?: ModalSize;
   submitDisabled?: boolean;
   onClose: () => void;
-  onSubmit?: () => void; // parent handles actual submit
+  onSubmit?: () => void;
   children: ReactNode;
-  footer?: ReactNode; // optional custom footer; if not provided, use default Cancel/Save
+  footer?: ReactNode;
 };
 
 export default function BaseModal({
@@ -43,9 +43,7 @@ export default function BaseModal({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (onSubmit) {
-      onSubmit();
-    }
+    onSubmit?.();
   };
 
   const titleId = title ? "base-modal-title" : undefined;
@@ -59,16 +57,23 @@ export default function BaseModal({
       aria-labelledby={titleId}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Modal container */}
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div
-          className={`w-full rounded-2xl shadow-2xl overflow-hidden bg-white border border-byu-navy ${sizeClass}`}
-          onClick={(e) => e.stopPropagation()} // prevent backdrop click
+          className={[
+            "w-full rounded-2xl shadow-2xl bg-white border border-byu-navy overflow-hidden",
+            sizeClass,
+            // ✅ leave a buffer so it never hits the viewport edges
+            "max-h-[calc(100vh-3rem)]", // 3rem buffer (top+bottom)
+            // ✅ layout to pin header/footer and scroll body
+            "flex flex-col",
+          ].join(" ")}
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="px-5 py-4 border-b bg-byu-navy flex items-center justify-between">
+          {/* Header (fixed) */}
+          <div className="px-5 py-4 border-b bg-byu-navy flex items-center justify-between shrink-0">
             <div className="flex items-start gap-2.5">
               {title && (
                 <h3 id={titleId} className="text-lg font-semibold text-white">
@@ -98,35 +103,41 @@ export default function BaseModal({
             </button>
           </div>
 
-          {/* Body + form */}
-          <form className="px-5 py-4 space-y-4" onSubmit={handleSubmit}>
-            {/* Your form fields go here */}
-            {children}
+          {/* Body (scrolls) + Footer (fixed) */}
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col flex-1 min-h-0"
+          >
+            {/* ✅ Scroll region */}
+            <div className="px-5 py-4 space-y-4 overflow-y-auto min-h-0">
+              {children}
+            </div>
 
-            {/* Divider */}
-            <div className="h-px bg-gray-200" />
+            {/* Divider + footer pinned to bottom */}
+            <div className="h-px bg-gray-200 shrink-0" />
 
-            {/* Footer */}
-            {footer ? (
-              footer
-            ) : (
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="px-3 py-1 rounded-lg border text-byu-navy hover:bg-gray-50 transition cursor-pointer"
-                  onClick={onClose}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || submitDisabled}
-                  className="px-3 py-1 rounded-lg bg-byu-royal text-white enabled:hover:bg-[#003C9E] shadow-sm transition enabled:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                >
-                  {saving ? "Saving…" : saveLabel}
-                </button>
-              </div>
-            )}
+            <div className="px-5 py-4 shrink-0">
+              {footer ? (
+                footer
+              ) : (
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    className="px-3 py-1 rounded-lg border text-byu-navy hover:bg-gray-50 transition cursor-pointer"
+                    onClick={onClose}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || submitDisabled}
+                    className="px-3 py-1 rounded-lg bg-byu-royal text-white enabled:hover:bg-[#003C9E] shadow-sm transition enabled:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                  >
+                    {saving ? "Saving…" : saveLabel}
+                  </button>
+                </div>
+              )}
+            </div>
           </form>
         </div>
       </div>

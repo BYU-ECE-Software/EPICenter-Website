@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRole } from "@/app/providers/RoleProvider";
 import { FiChevronDown, FiShoppingCart } from "react-icons/fi";
+import { useClickOutside } from "@/lib/hooks/useClickOutside";
 
 const HeaderBar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -16,6 +17,10 @@ const HeaderBar: React.FC = () => {
   // role state
   const { role, setRole } = useRole();
   const isEmployee = role === "employee";
+
+  // Project Requests dropdown refs
+  const projectRequestsMobileWrapRef = useRef<HTMLDivElement | null>(null);
+  const projectRequestsDesktopWrapRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
     const update = () => {
@@ -34,6 +39,16 @@ const HeaderBar: React.FC = () => {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  // Close the Project Requests dropdown by clicking anywhere outside of it
+  useClickOutside(
+    [projectRequestsMobileWrapRef, projectRequestsDesktopWrapRef],
+    {
+      enabled: projectRequestsOpen,
+      onOutsideClick: () => setProjectRequestsOpen(false),
+      onEscapeKey: () => setProjectRequestsOpen(false),
+    }
+  );
 
   return (
     <div className="w-full sticky top-0 z-50">
@@ -88,13 +103,15 @@ const HeaderBar: React.FC = () => {
             </div>
 
             {/* Cart icon */}
-            <Link
-              href="/cart"
-              className="hidden sm:inline-flex items-center justify-center p-2  focus:outline-none cursor-pointer"
-              aria-label="View cart"
-            >
-              <FiShoppingCart className="h-6 w-6 text-white" />
-            </Link>
+            {isEmployee && (
+              <Link
+                href="/cart"
+                className="hidden sm:inline-flex items-center justify-center p-2  focus:outline-none cursor-pointer"
+                aria-label="View cart"
+              >
+                <FiShoppingCart className="h-6 w-6 text-white" />
+              </Link>
+            )}
 
             <button
               type="button"
@@ -128,14 +145,16 @@ const HeaderBar: React.FC = () => {
               Home
             </Link>
 
-            <Link
-              href="/cart"
-              onClick={() => setMobileOpen(false)}
-              className="px-6 py-4 text-left hover:bg-[#FAFAFA] flex items-center gap-2"
-            >
-              <FiShoppingCart className="h-5 w-5 text-byu-navy mr-3" />
-              <span>Cart</span>
-            </Link>
+            {isEmployee && (
+              <Link
+                href="/cart"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA] flex items-center gap-2"
+              >
+                <FiShoppingCart className="h-5 w-5 text-byu-navy mr-3" />
+                <span>Cart</span>
+              </Link>
+            )}
 
             <Link
               href="/inventory"
@@ -154,19 +173,56 @@ const HeaderBar: React.FC = () => {
             </Link>
 
             {/* Project Requests with nested items */}
-            <button
-              type="button"
-              onClick={() => setProjectRequestsOpen((open) => !open)}
-              className={`flex items-center justify-between px-6 py-4 text-left hover:bg-[#FAFAFA] ${
-                projectRequestsOpen ? "bg-[#FAFAFA]" : ""
-              }`}
-            >
-              <span>Project Requests</span>
-              <FiChevronDown
-                className="w-4 h-4 text-byu-navy"
-                aria-hidden="true"
-              />
-            </button>
+            <div ref={projectRequestsMobileWrapRef}>
+              <button
+                type="button"
+                onClick={() => setProjectRequestsOpen((open) => !open)}
+                className={`flex items-center justify-between px-6 py-4 text-left hover:bg-[#FAFAFA] ${
+                  projectRequestsOpen ? "bg-[#FAFAFA]" : ""
+                }`}
+              >
+                <span>Project Requests</span>
+                <FiChevronDown
+                  className="w-4 h-4 text-byu-navy"
+                  aria-hidden="true"
+                />
+              </button>
+
+              {projectRequestsOpen && (
+                <div className="flex flex-col text-sm">
+                  <Link
+                    href="/3Dprint"
+                    onClick={() => {
+                      setProjectRequestsOpen(false);
+                      setMobileOpen(false);
+                    }}
+                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                  >
+                    3D Print
+                  </Link>
+                  <Link
+                    href="/PCBmill"
+                    onClick={() => {
+                      setProjectRequestsOpen(false);
+                      setMobileOpen(false);
+                    }}
+                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                  >
+                    PCB Mill
+                  </Link>
+                  <Link
+                    href="/laserCut"
+                    onClick={() => {
+                      setProjectRequestsOpen(false);
+                      setMobileOpen(false);
+                    }}
+                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                  >
+                    Laser Cut
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {isEmployee && (
               <Link
@@ -176,41 +232,6 @@ const HeaderBar: React.FC = () => {
               >
                 Loans
               </Link>
-            )}
-
-            {projectRequestsOpen && (
-              <div className="flex flex-col text-sm">
-                <Link
-                  href="/3Dprint"
-                  onClick={() => {
-                    setProjectRequestsOpen(false);
-                    setMobileOpen(false);
-                  }}
-                  className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
-                >
-                  3D Print
-                </Link>
-                <Link
-                  href="/PCBmill"
-                  onClick={() => {
-                    setProjectRequestsOpen(false);
-                    setMobileOpen(false);
-                  }}
-                  className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
-                >
-                  PCB Mill
-                </Link>
-                <Link
-                  href="/laserCut"
-                  onClick={() => {
-                    setProjectRequestsOpen(false);
-                    setMobileOpen(false);
-                  }}
-                  className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
-                >
-                  Laser Cut
-                </Link>
-              </div>
             )}
           </nav>
         </div>
@@ -247,7 +268,7 @@ const HeaderBar: React.FC = () => {
           </Link>
 
           {/* Project Requests tab with dropdown */}
-          <div className="relative">
+          <div className="relative" ref={projectRequestsDesktopWrapRef}>
             <button
               type="button"
               className={`px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover inline-flex items-center gap-2 ${

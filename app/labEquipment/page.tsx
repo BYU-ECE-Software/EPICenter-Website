@@ -18,7 +18,6 @@ import {
   FiMoreVertical,
   FiPlus,
   FiTrash2,
-  FiCornerDownLeft,
 } from "react-icons/fi";
 import {
   createLabEquipment,

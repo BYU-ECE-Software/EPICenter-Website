@@ -1,4 +1,4 @@
-import type { Loan, LoanStatus, CreateLoanPayload } from "@/types/loan";
+import type { Loan, LoanStatus, LoanPayload } from "@/types/loan";
 
 // --------Get Loans --------
 export async function fetchLoans(params?: {
@@ -26,7 +26,7 @@ export async function fetchLoans(params?: {
 }
 
 // --------Create Loan --------
-export async function createLoan(payload: CreateLoanPayload): Promise<Loan> {
+export async function createLoan(payload: LoanPayload): Promise<Loan> {
   const res = await fetch("/api/loans", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -38,5 +38,20 @@ export async function createLoan(payload: CreateLoanPayload): Promise<Loan> {
     throw new Error(text || "Failed to create loan");
   }
 
+  return res.json();
+}
+
+// --------Update Loan --------
+export async function updateLoan(
+  id: number,
+  payload: LoanPayload
+): Promise<Loan> {
+  const res = await fetch(`/api/loans/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error((await res.text()) || "Failed to update loan");
   return res.json();
 }

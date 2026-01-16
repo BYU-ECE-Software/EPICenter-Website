@@ -12,6 +12,7 @@ import { FiCornerDownLeft } from "react-icons/fi";
 import { formatDBStrings } from "@/lib/utils/formatDBStrings";
 import { statusToBadgeClasses } from "@/lib/utils/statusBadge";
 import ConfirmModal from "@/components/ConfirmModal";
+import { toYMDUTC } from "@/lib/utils/formatDate";
 
 // Action button that goes in the last column of the data table.
 function RowActions({
@@ -132,13 +133,6 @@ export default function LoansPage() {
     }
   };
 
-  const formatDate = (value: string | null | undefined) => {
-    if (!value) return "—";
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return value;
-    return d.toLocaleDateString();
-  };
-
   // Optional: client-side filter for now (until you implement search server-side)
   const filteredLoans = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -192,12 +186,12 @@ export default function LoansPage() {
     {
       key: "loanDate",
       header: "Checkout Date",
-      render: (row: Loan) => formatDate(row?.loanDate),
+      render: (row: Loan) => toYMDUTC(row?.loanDate),
     },
     {
       key: "returnDate",
       header: "Due Date",
-      render: (row: Loan) => formatDate(row?.returnDate),
+      render: (row: Loan) => toYMDUTC(row?.returnDate),
     },
     {
       key: "loanStatus",

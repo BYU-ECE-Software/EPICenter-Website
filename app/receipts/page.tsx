@@ -5,9 +5,12 @@ import SearchBar from "@/components/SearchBar";
 import DataTable from "@/components/DataTable";
 import Pagination from "@/components/Pagination";
 import { useRole } from "@/app/providers/RoleProvider";
-import { FiEye } from "react-icons/fi";
+import { FiFileText } from "react-icons/fi";
 import { toYMDUTC } from "@/lib/utils/formatDate";
 import { useRouter } from "next/navigation";
+import type { Purchase } from "@/types/purchase";
+import { fetchReceipts } from "@/lib/api/receiptsApi";
+import { formatCents } from "@/lib/utils/money";
 
 // View button that goes in the last column of the data table.
 function RowActions({ disabled }: { disabled?: boolean }) {
@@ -19,7 +22,7 @@ function RowActions({ disabled }: { disabled?: boolean }) {
         className="inline-flex items-center gap-2 rounded-lg bg-byu-royal px-1.5 py-1.5 text-white text-xs font-medium hover:bg-[#003C9E] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={() => {}}
       >
-        <FiEye className="h-4 w-4" />
+        <FiFileText className="h-4 w-4" />
         <span>View</span>
       </button>
     </div>
@@ -27,21 +30,14 @@ function RowActions({ disabled }: { disabled?: boolean }) {
 }
 
 export default function ReceiptsPage() {
+  //Search State
   const [searchQuery, setSearchQuery] = useState("");
 
-  // One dummy receipt row for styling preview
-  const [receipts] = useState<any[]>([
-    {
-      purchaser: "Jane Doe",
-      email: "jane.doe@byu.edu",
-      group: "ECE 110",
-      total: "$42.75",
-      purchaseDate: "2025-02-12T00:00:00Z",
-    },
-  ]);
-  const [loading] = useState(false);
-  const [refreshing] = useState(false);
-  const [loadError] = useState<string | null>(null);
+  // DB Receipts (Purchases) state
+  const [receipts, setReceipts] = useState<Purchase[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Pagination state (placeholder for now)
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,56 +56,67 @@ export default function ReceiptsPage() {
     }
   }, [isEmployee, router]);
 
-  // Optional: client-side filter (kept for consistency; currently empty)
-  const filteredReceipts = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return receipts;
+  // Reusable reload helper
+  const reloadReceipts = async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent ?? false;
 
-    return receipts.filter((r) => {
-      const haystack = [r.purchaser, r.email, r.group, r.total, r.purchaseDate]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+    if (silent) setRefreshing(true);
+    else setLoading(true);
 
-      return haystack.includes(q);
-    });
-  }, [receipts, searchQuery]);
+    setLoadError(null);
+
+    try {
+      // If later you want employee to see all and student to see their own,
+      // you can pass userId here (once you have it).
+      const data = await fetchReceipts();
+      setReceipts(data);
+    } catch (err: any) {
+      console.error("Failed to fetch receipts:", err);
+      setLoadError(err?.message ?? "Failed to fetch receipts");
+    } finally {
+      if (silent) setRefreshing(false);
+      else setLoading(false);
+    }
+  };
+
+  // Load receipts in table on page load
+  useEffect(() => {
+    reloadReceipts();
+  }, []);
 
   // Columns for the Receipts table
   const columns = [
     {
       key: "purchaser",
       header: "Purchaser",
-      render: (row: any) => row?.purchaser ?? "",
+      render: (row: Purchase) => row?.user?.name ?? row?.user?.email ?? "",
     },
     {
       key: "email",
       header: "Email",
-      render: (row: any) => row?.email ?? "",
+      render: (row: Purchase) => row?.user?.email ?? "",
     },
     {
       key: "group",
       header: "Group",
-      render: (row: any) => row?.group ?? "",
+      render: (row: Purchase) => row?.purchasingGroup?.name ?? "",
     },
     {
       key: "total",
       header: "Total",
-      render: (row: any) => row?.total ?? "",
+      render: (row: Purchase) => formatCents(row?.totalCents),
     },
     {
       key: "purchaseDate",
       header: "Date of Purchase",
-      render: (row: any) => toYMDUTC(row?.purchaseDate),
+      render: (row: Purchase) => toYMDUTC(row?.createdAt),
     },
     {
       key: "actions",
       header: "",
       headerClassName: "w-[1%]",
       cellClassName: "text-right",
-      render: (_row: any) => (
-        <RowActions disabled={refreshing || loading || !isEmployee} />
-      ),
+      render: () => <RowActions disabled={refreshing || loading} />,
     },
   ];
 
@@ -136,11 +143,7 @@ export default function ReceiptsPage() {
       )}
 
       <div>
-        <DataTable
-          data={filteredReceipts}
-          loading={loading}
-          columns={columns}
-        />
+        <DataTable data={receipts} loading={loading} columns={columns} />
       </div>
 
       <Pagination

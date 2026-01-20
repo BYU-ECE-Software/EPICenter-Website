@@ -47,7 +47,7 @@ const HeaderBar: React.FC = () => {
       enabled: projectRequestsOpen,
       onOutsideClick: () => setProjectRequestsOpen(false),
       onEscapeKey: () => setProjectRequestsOpen(false),
-    }
+    },
   );
 
   return (
@@ -233,6 +233,16 @@ const HeaderBar: React.FC = () => {
                 Loans
               </Link>
             )}
+
+            {isEmployee && (
+              <Link
+                href="/receipts"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
+              >
+                Receipts
+              </Link>
+            )}
           </nav>
         </div>
       )}
@@ -309,6 +319,7 @@ const HeaderBar: React.FC = () => {
               </div>
             )}
           </div>
+
           {/* Loans tab (employee only) */}
           {isEmployee && (
             <Link
@@ -316,6 +327,16 @@ const HeaderBar: React.FC = () => {
               className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
             >
               Loans
+            </Link>
+          )}
+
+          {/* Receipts tab (employee only) */}
+          {isEmployee && (
+            <Link
+              href="/receipts"
+              className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
+            >
+              Receipts
             </Link>
           )}
         </div>

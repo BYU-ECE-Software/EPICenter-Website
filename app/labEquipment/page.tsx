@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import SearchBar from "@/components/SearchBar";
 import PrimaryButton from "@/components/PrimaryButton";
 import DataTable from "@/components/DataTable";
-import BaseModal from "@/components/BaseModal";
+import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import RowActionMenu from "@/components/RowActionMenu";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -94,10 +94,12 @@ export default function LabEquipmentPage() {
   const [saving, setSaving] = useState(false);
 
   // State for fields in the Equipment Modal
-  const [equipmentName, setEquipmentName] = useState("");
-  const [serialNumber, setSerialNumber] = useState("");
-  const [location, setLocation] = useState("");
-  const [status, setStatus] = useState<Equipment["status"]>("AVAILABLE");
+  const [equipmentForm, setEquipmentForm] = useState({
+    name: "",
+    serialNumber: "",
+    location: "",
+    status: "AVAILABLE" as Equipment["status"],
+  });
 
   // Two modes for Equipment Modal - create or edit.
   type EquipmentModalMode = "create" | "edit";
@@ -120,18 +122,21 @@ export default function LabEquipmentPage() {
 
   // Loan modal state
   const [loanOpen, setLoanOpen] = useState(false);
-  const [loanDueDate, setLoanDueDate] = useState("");
   const [selectedLoanRow, setSelectedLoanRow] = useState<Equipment | null>(
-    null
+    null,
   );
-  const [loanUserId, setLoanUserId] = useState(""); // keep as string for the input
-  const parsedUserId = Number(loanUserId);
+  const [loanForm, setLoanForm] = useState({
+    userId: "",
+    dueDate: "",
+  });
+  const parsedUserId = Number(loanForm.userId);
+
   const isUserIdValid =
-    loanUserId.trim().length > 0 &&
+    loanForm.userId.trim().length > 0 &&
     Number.isInteger(parsedUserId) &&
     parsedUserId > 0;
 
-  const isLoanValid = Boolean(loanDueDate) && isUserIdValid;
+  const isLoanValid = Boolean(loanForm.dueDate) && isUserIdValid;
 
   // Toast State
   const [toast, setToast] = useState<{
@@ -164,36 +169,30 @@ export default function LabEquipmentPage() {
   // Loan Handlers
   const openLoan = (row: any) => {
     setSelectedLoanRow(row);
-    setLoanDueDate("");
-    setLoanUserId("");
+    setLoanForm({ userId: "", dueDate: "" });
     setLoanOpen(true);
   };
 
   const closeLoan = () => {
     setLoanOpen(false);
     setSelectedLoanRow(null);
-    setLoanDueDate("");
-    setLoanUserId("");
+    setLoanForm({ userId: "", dueDate: "" });
   };
 
   const submitLoan = async () => {
     if (!isLoanValid || !selectedLoanRow?.id) return;
 
     try {
-      // due date from <input type="date"> is "YYYY-MM-DD"
-      // Convert to ISO so Prisma DateTime is happy.
       const returnDateIso = new Date(
-        `${loanDueDate}T00:00:00.000Z`
+        `${loanForm.dueDate}T00:00:00.000Z`,
       ).toISOString();
 
       await createLoan({
         userId: parsedUserId,
         equipmentId: selectedLoanRow.id,
         returnDate: returnDateIso,
-        // loanDate/status optional; Prisma defaults handle them
       });
 
-      // refresh equipment so status flips to ON_LOAN after your backend update
       const refreshed = await fetchLabEquipment();
       setEquipment(refreshed);
 
@@ -202,14 +201,14 @@ export default function LabEquipmentPage() {
       showToast(
         "success",
         "Loan created",
-        `"${selectedLoanRow?.name ?? "Equipment"}" was put on loan.`
+        `"${selectedLoanRow?.name ?? "Equipment"}" was put on loan.`,
       );
     } catch (err) {
       console.error("Create loan failed:", err);
       showToast(
         "error",
         "Loan failed",
-        "Could not create the loan. Check the User ID and try again."
+        "Could not create the loan. Check the User ID and try again.",
       );
     }
   };
@@ -239,14 +238,14 @@ export default function LabEquipmentPage() {
       showToast(
         "success",
         "Equipment removed",
-        `"${rowToRemove.name ?? "Equipment"}" was deleted.`
+        `"${rowToRemove.name ?? "Equipment"}" was deleted.`,
       );
     } catch (err) {
       console.error("Delete equipment failed:", err);
       showToast(
         "error",
         "Delete failed",
-        "Could not remove the equipment. Try again."
+        "Could not remove the equipment. Try again.",
       );
     } finally {
       setRemoving(false);
@@ -292,23 +291,24 @@ export default function LabEquipmentPage() {
     },
   ];
 
-  // Whether or not the Modal submission button should be disabled
-  const isSubmitDisabled = !equipmentName.trim() || !serialNumber.trim();
-
   // Reset Fields in the Equipment Form
   const resetEquipmentForm = () => {
-    setEquipmentName("");
-    setSerialNumber("");
-    setLocation("");
-    setStatus("AVAILABLE");
+    setEquipmentForm({
+      name: "",
+      serialNumber: "",
+      location: "",
+      status: "AVAILABLE",
+    });
   };
 
   // Fill Edit Equipment Modal with info from the row
   const fillEquipmentFormFromRow = (row: any) => {
-    setEquipmentName(row?.name ?? "");
-    setSerialNumber(row?.serialNumber ?? "");
-    setLocation(row?.location ?? "");
-    setStatus(row?.status ?? "AVAILABLE");
+    setEquipmentForm({
+      name: row?.name ?? "",
+      serialNumber: row?.serialNumber ?? "",
+      location: row?.location ?? "",
+      status: (row?.status ?? "AVAILABLE") as Equipment["status"],
+    });
   };
 
   // Open Equipment Modal in Create Mode
@@ -335,15 +335,21 @@ export default function LabEquipmentPage() {
     setEquipmentModalMode("create");
   };
 
+  // Whether or not the Modal submission button should be disabled
+  const isSubmitDisabled =
+    !equipmentForm.name.trim() || !equipmentForm.serialNumber.trim();
+
   // Submission of Create/Edit Equipment Form
   const handleEquipmentModalSubmit = async () => {
     setSaving(true);
     try {
       const payload: EquipmentPayload = {
-        name: equipmentName.trim(),
-        serialNumber: serialNumber.trim(),
-        location: location.trim() ? location.trim() : null,
-        status,
+        name: equipmentForm.name.trim(),
+        serialNumber: equipmentForm.serialNumber.trim(),
+        location: equipmentForm.location.trim()
+          ? equipmentForm.location.trim()
+          : null,
+        status: equipmentForm.status,
       };
 
       if (equipmentModalMode === "create") {
@@ -354,7 +360,7 @@ export default function LabEquipmentPage() {
         showToast(
           "success",
           "Equipment created",
-          `"${payload.name}" was added.`
+          `"${payload.name}" was added.`,
         );
       } else {
         if (!editingRow?.id) throw new Error("No equipment selected to edit");
@@ -366,7 +372,7 @@ export default function LabEquipmentPage() {
         showToast(
           "success",
           "Equipment updated",
-          `"${payload.name}" was saved.`
+          `"${payload.name}" was saved.`,
         );
       }
 
@@ -376,7 +382,7 @@ export default function LabEquipmentPage() {
       showToast(
         "error",
         "Save failed",
-        "Could not save the equipment. Try again."
+        "Could not save the equipment. Try again.",
       );
     } finally {
       setSaving(false);
@@ -447,7 +453,7 @@ export default function LabEquipmentPage() {
       />
 
       {/* Create/edit Equipment Form Modal */}
-      <BaseModal
+      <FormModal
         open={equipmentModalOpen}
         onClose={handleCloseEquipmentModal}
         onSubmit={handleEquipmentModalSubmit}
@@ -456,71 +462,39 @@ export default function LabEquipmentPage() {
         saving={saving}
         saveLabel={modalSaveLabel}
         submitDisabled={isSubmitDisabled}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Equipment Name */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Equipment Name *
-            </label>
-            <input
-              type="text"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              placeholder="Enter equipment name..."
-              value={equipmentName}
-              onChange={(e) => setEquipmentName(e.target.value)}
-            />
-          </div>
-
-          {/* Serial Number */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Serial Number *
-            </label>
-            <input
-              type="text"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              placeholder="Enter serial number..."
-              value={serialNumber}
-              onChange={(e) => setSerialNumber(e.target.value)}
-            />
-          </div>
-
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Last Seen Location
-            </label>
-            <input
-              type="text"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              placeholder="Enter location..."
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Status
-            </label>
-            <select
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as Equipment["status"])}
-            >
-              <option value="AVAILABLE">Available</option>
-              <option value="ON_LOAN">On Loan</option>
-              <option value="MAINTENANCE">Maintenance</option>
-              <option value="RETIRED">Retired</option>
-            </select>
-          </div>
-        </div>
-      </BaseModal>
+        values={equipmentForm}
+        setValues={setEquipmentForm}
+        fields={[
+          {
+            key: "name",
+            label: "Equipment Name",
+            required: true,
+          },
+          {
+            key: "serialNumber",
+            label: "Serial Number",
+            required: true,
+          },
+          {
+            key: "location",
+            label: "Last Seen Location",
+          },
+          {
+            key: "status",
+            label: "Status",
+            kind: "select",
+            options: [
+              { label: "Available", value: "AVAILABLE" },
+              { label: "On Loan", value: "ON_LOAN" },
+              { label: "Maintenance", value: "MAINTENANCE" },
+              { label: "Retired", value: "RETIRED" },
+            ],
+          },
+        ]}
+      />
 
       {/* Loan Modal */}
-      <BaseModal
+      <FormModal
         open={loanOpen}
         onClose={closeLoan}
         onSubmit={submitLoan}
@@ -529,43 +503,33 @@ export default function LabEquipmentPage() {
         saving={false}
         saveLabel="Set due date"
         submitDisabled={!isLoanValid}
-      >
-        <div className="space-y-3">
-          {/* Loanee User ID */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              User ID *
-            </label>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              className="w-full rounded-md border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              placeholder="Enter loanee user id..."
-              value={loanUserId}
-              onChange={(e) => setLoanUserId(e.target.value)}
-            />
-            {!loanUserId.trim() ? null : !isUserIdValid ? (
-              <p className="mt-1 text-xs text-red-600">
-                Enter a valid positive integer User ID.
-              </p>
-            ) : null}
-          </div>
-
-          {/* Due Date */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Due date *
-            </label>
-            <input
-              type="date"
-              className="w-full rounded-md border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              value={loanDueDate}
-              onChange={(e) => setLoanDueDate(e.target.value)}
-            />
-          </div>
-        </div>
-      </BaseModal>
+        values={loanForm}
+        setValues={setLoanForm}
+        errors={{
+          userId: !loanForm.userId.trim()
+            ? ""
+            : !isUserIdValid
+              ? "Enter a valid positive integer User ID."
+              : "",
+        }}
+        fields={[
+          {
+            key: "userId",
+            label: "User ID",
+            required: true,
+            type: "number",
+            colSpan: 2,
+            placeholder: "Enter loanee user id...",
+          },
+          {
+            key: "dueDate",
+            label: "Due date",
+            required: true,
+            type: "date",
+            colSpan: 2,
+          },
+        ]}
+      />
 
       {/* Confirm Removal */}
       <ConfirmModal

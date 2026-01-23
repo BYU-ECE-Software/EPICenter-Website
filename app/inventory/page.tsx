@@ -5,6 +5,7 @@ import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import PrimaryButton from "@/components/PrimaryButton";
 import DataTable from "@/components/DataTable";
+import FormModal from "@/components/FormModal";
 import BaseModal from "@/components/BaseModal";
 import Pagination from "@/components/Pagination";
 import RowActionMenu from "@/components/RowActionMenu";
@@ -92,11 +93,12 @@ export default function InventoryPage() {
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // State for fields in the Item Modal
-  const [itemName, setItemName] = useState("");
-  const [location, setLocation] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
+  const [itemForm, setItemForm] = useState({
+    itemName: "",
+    location: "",
+    description: "",
+    price: "",
+  });
 
   // Photo upload state
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -122,7 +124,7 @@ export default function InventoryPage() {
 
   // Add-to-cart modal state
   const [addToCartOpen, setAddToCartOpen] = useState(false);
-  const [cartQty, setCartQty] = useState("1");
+  const [cartForm, setCartForm] = useState({ qty: "1" });
   const [selectedCartRow, setSelectedCartRow] = useState<any>(null);
 
   // Load items for table once on page load
@@ -146,7 +148,7 @@ export default function InventoryPage() {
   // Open Add to Cart Modal
   const openAddToCart = (row: any) => {
     setSelectedCartRow(row);
-    setCartQty("1");
+    setCartForm({ qty: "1" });
     setAddToCartOpen(true);
   };
 
@@ -154,10 +156,10 @@ export default function InventoryPage() {
   const closeAddToCart = () => {
     setAddToCartOpen(false);
     setSelectedCartRow(null);
-    setCartQty("1");
+    setCartForm({ qty: "1" });
   };
 
-  const qtyNumber = Number(cartQty);
+  const qtyNumber = Number(cartForm.qty);
   const isQtyValid = Number.isInteger(qtyNumber) && qtyNumber > 0;
 
   // Submit Add to Cart Modal
@@ -202,14 +204,14 @@ export default function InventoryPage() {
       showToast(
         "success",
         "Item removed",
-        `"${rowToRemove.name ?? "Item"}" was deleted.`
+        `"${rowToRemove.name ?? "Item"}" was deleted.`,
       );
     } catch (err) {
       console.error("Delete item failed:", err);
       showToast(
         "error",
         "Delete failed",
-        "Could not remove the item. Try again."
+        "Could not remove the item. Try again.",
       );
     } finally {
       setRemoving(false);
@@ -231,7 +233,7 @@ export default function InventoryPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`/api/items/${row.id}/photo?v=${encodeURIComponent(
-                row.photoURL
+                row.photoURL,
               )}`}
               alt={row.name ?? "Item photo"}
               className="h-full w-full object-contain"
@@ -274,18 +276,21 @@ export default function InventoryPage() {
 
   // Whether or not the Modal submission button should be disabled
   const isSubmitDisabled =
-    !itemName.trim() ||
-    !location.trim() ||
-    !description.trim() ||
-    price === "" ||
-    Number(price) <= 0;
+    !itemForm.itemName.trim() ||
+    !itemForm.location.trim() ||
+    !itemForm.description.trim() ||
+    itemForm.price === "" ||
+    Number(itemForm.price) <= 0;
 
   // Reset Fields in the Item Form
   const resetItemForm = () => {
-    setItemName("");
-    setLocation("");
-    setDescription("");
-    setPrice("");
+    setItemForm({
+      itemName: "",
+      location: "",
+      description: "",
+      price: "",
+    });
+
     setPhotoFile(null);
     setPhotoPreviewUrl(null);
     setRemovePhoto(false);
@@ -294,9 +299,17 @@ export default function InventoryPage() {
 
   // Fill Edit Item Modal with info from the row
   const fillItemFormFromRow = (row: any) => {
-    setItemName(row?.name ?? "");
-    setLocation(row?.location ?? "");
-    setDescription(row?.description ?? "");
+    const cents = row?.priceCents;
+
+    setItemForm({
+      itemName: row?.name ?? "",
+      location: row?.location ?? "",
+      description: row?.description ?? "",
+      price:
+        cents === null || cents === undefined
+          ? ""
+          : (Number(cents) / 100).toFixed(2),
+    });
 
     const existingUrl =
       row?.id && row?.photoURL
@@ -307,13 +320,6 @@ export default function InventoryPage() {
     setPhotoPreviewUrl(existingUrl);
     setRemovePhoto(false);
     setPhotoFile(null);
-
-    const cents = row?.priceCents;
-    if (cents === null || cents === undefined) {
-      setPrice("");
-    } else {
-      setPrice((Number(cents) / 100).toFixed(2)); // input expects dollars
-    }
   };
 
   // Open Item Modal in Create Mode
@@ -344,13 +350,13 @@ export default function InventoryPage() {
   const handleItemModalSubmit = async () => {
     setSaving(true);
     try {
-      const priceNumber = parseFloat(price);
+      const priceNumber = parseFloat(itemForm.price);
 
       // 1) Build the base payload (same as before)
       const payload: ItemPayload = {
-        name: itemName.trim(),
-        location: location.trim(),
-        description: description.trim(),
+        name: itemForm.itemName.trim(),
+        location: itemForm.location.trim(),
+        description: itemForm.description.trim(),
         priceCents: Math.round(priceNumber * 100),
       };
 
@@ -358,7 +364,7 @@ export default function InventoryPage() {
       // - create mode: default null
       // - edit mode: default to existing key (preserve)
       let photoURLKey: string | null =
-        itemModalMode === "edit" ? editingRow?.photoURL ?? null : null;
+        itemModalMode === "edit" ? (editingRow?.photoURL ?? null) : null;
 
       // if user chose to remove the existing photo, force null
       if (removePhoto) {
@@ -480,7 +486,7 @@ export default function InventoryPage() {
       />
 
       {/* Create/Edit Item Form Modal */}
-      <BaseModal
+      <FormModal
         open={itemModalOpen}
         onClose={handleCloseItemModal}
         onSubmit={handleItemModalSubmit}
@@ -489,195 +495,139 @@ export default function InventoryPage() {
         saving={saving}
         saveLabel={modalSaveLabel}
         submitDisabled={isSubmitDisabled}
-      >
-        {/* Form Inputs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Item Name */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Item Name *
-            </label>
-            <input
-              type="text"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              placeholder="Enter item name..."
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-            />
-          </div>
+        values={itemForm}
+        setValues={setItemForm}
+        fields={[
+          {
+            key: "itemName",
+            label: "Item Name",
+            required: true,
+          },
+          {
+            key: "location",
+            label: "Location",
+            required: true,
+          },
+          {
+            key: "description",
+            label: "Description",
+            required: true,
+            colSpan: 2,
+          },
 
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Location *
-            </label>
-            <input
-              type="text"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              placeholder="Enter location..."
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-          </div>
+          // Image Upload - Custom Code
+          {
+            kind: "custom",
+            key: "photo",
+            colSpan: 2,
+            render: () => (
+              <div>
+                <label className="block text-sm font-medium text-byu-navy mb-2">
+                  Image
+                </label>
 
-          {/* Description */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Description *
-            </label>
-            <input
-              type="text"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              placeholder="Enter description..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
+                <div className="flex items-center gap-5">
+                  <div className="h-20 w-20 rounded-md border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                    {photoPreviewUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={photoPreviewUrl}
+                        alt="Item photo preview"
+                        className="h-full w-full object-cover"
+                        onError={() => setPhotoPreviewUrl(null)}
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-400 px-2 text-center">
+                        No image selected
+                      </span>
+                    )}
+                  </div>
 
-          {/* Photo (optional) */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-byu-navy mb-2">
-              Image
-            </label>
+                  <div className="flex-1">
+                    <div className="flex flex-col items-start gap-2">
+                      <label className="inline-flex items-center justify-center rounded-sm bg-gray-100 border border-black px-2 py-1 text-sm text-black cursor-pointer hover:bg-gray-200 transition">
+                        {photoPreviewUrl ? "Change file" : "Choose file"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            setPhotoFile(f);
+                            setRemovePhoto(false);
 
-            <div className="flex items-center gap-5">
-              <div className="h-20 w-20 rounded-md border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
-                {photoPreviewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={photoPreviewUrl}
-                    alt="Item photo preview"
-                    className="h-full w-full object-cover"
-                    onError={() => setPhotoPreviewUrl(null)}
-                  />
-                ) : (
-                  <span className="text-xs text-gray-400 px-2 text-center">
-                    No image selected
-                  </span>
-                )}
-              </div>
+                            if (f) {
+                              setPhotoPreviewUrl(URL.createObjectURL(f));
+                            } else {
+                              setPhotoPreviewUrl(initialPhotoUrl);
+                            }
+                          }}
+                        />
+                      </label>
 
-              {/* Right side controls */}
-              <div className="flex-1">
-                <div className="flex flex-col items-start gap-2">
-                  {/* Button that triggers the hidden input via label */}
-                  <label className="inline-flex items-center justify-center rounded-sm bg-gray-100 border border-black px-2 py-1 text-sm text-black cursor-pointer hover:bg-gray-200 transition">
-                    {photoPreviewUrl ? "Change file" : "Choose file"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0] ?? null;
-                        setPhotoFile(f);
-                        setRemovePhoto(false);
+                      {(photoFile ||
+                        (isEdit && editingRow?.photoURL && !removePhoto)) && (
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 text-xs text-gray-700 hover:underline"
+                          onClick={() => {
+                            if (photoFile) {
+                              setPhotoFile(null);
+                              setPhotoPreviewUrl(
+                                removePhoto ? null : initialPhotoUrl,
+                              );
+                              return;
+                            }
 
-                        if (f) {
-                          setPhotoPreviewUrl(URL.createObjectURL(f));
-                        } else {
-                          setPhotoPreviewUrl(initialPhotoUrl);
-                        }
-                      }}
-                    />
-                  </label>
-
-                  {(photoFile ||
-                    (isEdit && editingRow?.photoURL && !removePhoto)) && (
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 text-xs text-gray-700 hover:underline"
-                      onClick={() => {
-                        // If there is a newly selected file, just clear it (doesn't delete DB photo)
-                        if (photoFile) {
-                          setPhotoFile(null);
-
-                          // If they had previously removed the existing photo, stay at "no image"
-                          // Otherwise revert to the original DB photo (if any)
-                          setPhotoPreviewUrl(
-                            removePhoto ? null : initialPhotoUrl
-                          );
-
-                          return;
-                        }
-
-                        // Otherwise, we're removing the EXISTING saved photo
-                        setRemovePhoto(true);
-                        setPhotoFile(null);
-                        setPhotoPreviewUrl(null);
-                      }}
-                    >
-                      <FiTrash2 className="h-3 w-3" />
-                      Remove photo
-                    </button>
-                  )}
+                            setRemovePhoto(true);
+                            setPhotoFile(null);
+                            setPhotoPreviewUrl(null);
+                          }}
+                        >
+                          <FiTrash2 className="h-3 w-3" />
+                          Remove photo
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            ),
+          },
 
-          {/* Datasheet (optional) */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Datasheet
-            </label>
-            <input
-              type="text"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-              placeholder="Datasheet URL..."
-            />
-          </div>
-
-          {/* Price */}
-          <div>
-            <label className="block text-sm font-medium text-byu-navy mb-1">
-              Price *
-            </label>
-            <div className="relative">
-              {/* $ prefix */}
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                $
-              </span>
-
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                className="w-full rounded-md border border-gray-300 pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                placeholder="0.00"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      </BaseModal>
+          {
+            key: "price",
+            label: "Price",
+            required: true,
+            type: "number",
+            placeholder: "0.00",
+            // Only add this if you already implemented adornments in FormModal
+            adornment: { text: "$", position: "start" },
+          },
+        ]}
+      />
 
       {/* Add to Cart Modal */}
-      <BaseModal
+      <FormModal
         open={addToCartOpen}
         onClose={closeAddToCart}
         onSubmit={submitAddToCart}
         title="Enter item quantity"
         size="sm"
         saving={false}
-        saveLabel="Add"
+        saveLabel="Add to Cart"
         submitDisabled={!isQtyValid}
-      >
-        <div className="space-y-3">
-          <label className="block text-sm font-medium text-byu-navy">
-            Quantity
-          </label>
-
-          <input
-            type="number"
-            step="1"
-            min="1"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-            value={cartQty}
-            onChange={(e) => setCartQty(e.target.value)} // allows delete/retype
-          />
-        </div>
-      </BaseModal>
+        values={cartForm}
+        setValues={setCartForm}
+        fields={[
+          {
+            key: "qty",
+            label: "Quantity",
+            type: "number",
+            required: true,
+          },
+        ]}
+      />
 
       {/* Confirm Removal of an Item */}
       <ConfirmModal

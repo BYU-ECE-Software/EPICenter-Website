@@ -243,6 +243,16 @@ const HeaderBar: React.FC = () => {
                 Receipts
               </Link>
             )}
+
+            {isEmployee && (
+              <Link
+                href="/groups"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
+              >
+                Groups
+              </Link>
+            )}
           </nav>
         </div>
       )}
@@ -337,6 +347,16 @@ const HeaderBar: React.FC = () => {
               className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
             >
               Receipts
+            </Link>
+          )}
+
+          {/* Groups tab (employee only) */}
+          {isEmployee && (
+            <Link
+              href="/groups"
+              className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
+            >
+              Groups
             </Link>
           )}
         </div>

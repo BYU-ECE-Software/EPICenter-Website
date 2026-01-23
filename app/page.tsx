@@ -1,68 +1,63 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import BaseModal from "@/components/BaseModal";
+import FormModal from "@/components/FormModal";
 
 export default function Home() {
   // Modal open/close
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Section 1: Request Information
-  const [requestName, setRequestName] = useState("");
-  const [requestEmail, setRequestEmail] = useState("");
+  // 3D Print Modal Form
+  const [printForm, setPrintForm] = useState({
+    requestName: "",
+    requestEmail: "",
+    printFile: null as File | null,
+    printQuantity: "1",
+    filamentColor: "",
+    comments: "",
+  });
 
-  // Section 2: Print File
-  const [printFile, setPrintFile] = useState<File | null>(null);
-
-  // Section 3: Print Settings
-  const [printQuantity, setPrintQuantity] = useState("1");
-  const [filamentColor, setFilamentColor] = useState("");
-  const [infillPercent, setInfillPercent] = useState("");
-  const [comments, setComments] = useState("");
-
+  // Reset 3d Print Form
   const reset3DPrintForm = () => {
-    setRequestName("");
-    setRequestEmail("");
-    setPrintFile(null);
-    setPrintQuantity("1");
-    setFilamentColor("");
-    setInfillPercent("");
-    setComments("");
+    setPrintForm({
+      requestName: "",
+      requestEmail: "",
+      printFile: null,
+      printQuantity: "1",
+      filamentColor: "",
+      comments: "",
+    });
   };
 
+  // Close 3D Print Modal
   const close3DPrintModal = () => {
     setPrintModalOpen(false);
     reset3DPrintForm();
   };
 
+  // Check that user entered a valid email
   const isEmailValid = useMemo(() => {
-    const v = requestEmail.trim();
+    const v = printForm.requestEmail.trim();
     return v.includes("@") && v.includes(".");
-  }, [requestEmail]);
+  }, [printForm.requestEmail]);
 
-  const quantityNumber = Number(printQuantity);
-  const infillNumber = Number(infillPercent);
-
-  const isQuantityValid =
-    Number.isInteger(quantityNumber) &&
-    Number.isFinite(quantityNumber) &&
-    quantityNumber > 0;
-
-  const isInfillValid =
-    Number.isInteger(infillNumber) &&
-    Number.isFinite(infillNumber) &&
-    infillNumber >= 5 &&
-    infillNumber <= 15;
+  // ensure quantity is a whole number greater than 0
+  const qtyRaw = printForm.printQuantity.trim();
+  const qtyNum = Number(qtyRaw);
+  const hasQty = qtyRaw.length > 0;
+  const isQtyNumber = hasQty && Number.isFinite(qtyNum);
+  const isQtyInteger = isQtyNumber && Number.isInteger(qtyNum);
+  const isQtyAtLeastOne = isQtyNumber && qtyNum >= 1;
+  const isQuantityValid = isQtyInteger && isQtyAtLeastOne;
 
   // Required fields gate
   const isSubmitDisabled =
-    !requestName.trim() ||
+    !printForm.requestName.trim() ||
     !isEmailValid ||
-    !printFile ||
+    !printForm.printFile ||
     !isQuantityValid ||
-    !filamentColor.trim() ||
-    !isInfillValid;
+    !printForm.filamentColor.trim();
 
   const handle3DPrintSubmit = async () => {
     if (isSubmitDisabled) return;
@@ -71,19 +66,35 @@ export default function Home() {
     try {
       // Placeholder for now
       console.log("3D Print Request", {
-        name: requestName.trim(),
-        email: requestEmail.trim(),
-        file: printFile?.name,
-        quantity: Number(printQuantity),
-        filamentColor: filamentColor.trim(),
-        infillPercent: Number(infillPercent),
-        comments: comments.trim(),
+        name: printForm.requestName.trim(),
+        email: printForm.requestEmail.trim(),
+        file: printForm.printFile?.name,
+        quantity: Number(printForm.printQuantity),
+        filamentColor: printForm.filamentColor.trim(),
+        comments: printForm.comments.trim(),
       });
 
       close3DPrintModal();
     } finally {
       setSaving(false);
     }
+  };
+
+  // 3D Print errors
+  const errors = {
+    requestEmail:
+      !printForm.requestEmail.trim() || isEmailValid
+        ? ""
+        : "Enter a valid email.",
+    printQuantity: !hasQty
+      ? ""
+      : !isQtyNumber
+        ? "Enter a number."
+        : !isQtyInteger
+          ? "Enter a whole number."
+          : !isQtyAtLeastOne
+            ? "Enter a quantity of 1 or more."
+            : "",
   };
 
   return (
@@ -139,7 +150,7 @@ export default function Home() {
         </div>
 
         {/* 3D Print Request Modal */}
-        <BaseModal
+        <FormModal
           open={printModalOpen}
           onClose={close3DPrintModal}
           onSubmit={handle3DPrintSubmit}
@@ -148,168 +159,93 @@ export default function Home() {
           saving={saving}
           saveLabel="Submit Request"
           submitDisabled={isSubmitDisabled}
-        >
-          <div className="grid grid-cols-1 gap-6">
-            {/* Request Info Section */}
-            <section className="text-left">
-              <h3 className="text-base font-semibold text-byu-navy mb-4">
-                Request Information
-              </h3>
+          values={printForm}
+          setValues={setPrintForm}
+          errors={errors}
+          fields={[
+            {
+              key: "requestName",
+              label: "Name",
+              required: true,
+            },
+            {
+              key: "requestEmail",
+              label: "Email",
+              required: true,
+              type: "email",
+            },
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+            // Custom file picker
+            {
+              kind: "custom",
+              key: "printFile",
+              colSpan: 2,
+              render: () => (
+                <div className="text-left">
                   <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Name *
+                    Print File *
                   </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                    placeholder="Enter your name..."
-                    value={requestName}
-                    onChange={(e) => setRequestName(e.target.value)}
-                  />
+                  <p className="text-xs text-gray-600 mb-3">
+                    We accept .stl, .3mf, .stp
+                  </p>
+
+                  <div className="flex items-center gap-3 mb-2">
+                    <label className="inline-flex items-center justify-center rounded-sm bg-gray-100 border border-black px-2 py-1 text-sm text-black cursor-pointer hover:bg-gray-200 transition">
+                      Choose file
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".stl,.3mf,.stp"
+                        onChange={(e) =>
+                          setPrintForm((p) => ({
+                            ...p,
+                            printFile: e.target.files?.[0] ?? null,
+                          }))
+                        }
+                      />
+                    </label>
+
+                    <div className="text-sm text-gray-700 truncate max-w-[22rem]">
+                      {printForm.printFile ? (
+                        printForm.printFile.name
+                      ) : (
+                        <span className="text-gray-400">No file selected</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
+              ),
+            },
 
-                <div>
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                    placeholder="name@byu.edu"
-                    value={requestEmail}
-                    onChange={(e) => setRequestEmail(e.target.value)}
-                  />
-                  {!requestEmail.trim() || isEmailValid ? null : (
-                    <p className="mt-1 text-xs text-red-600">
-                      Enter a valid email.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            {/* Section divider */}
-            <div className="border-t border-gray-200" />
-
-            {/* Print File Section */}
-            <section className="text-left">
-              <h3 className="text-base font-semibold text-byu-navy mb-2">
-                Print File
-              </h3>
-
-              <p className="text-xs text-gray-600 mb-3">
-                We accept .stl, .3mf, .stp
-              </p>
-
-              <div className="flex items-center gap-3">
-                <label className="inline-flex items-center justify-center rounded-sm bg-gray-100 border border-black px-2 py-1 text-sm text-black cursor-pointer hover:bg-gray-200 transition">
-                  Choose file
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".stl,.3mf,.stp"
-                    onChange={(e) => setPrintFile(e.target.files?.[0] ?? null)}
-                  />
-                </label>
-
-                <div className="text-sm text-gray-700 truncate max-w-[22rem]">
-                  {printFile ? (
-                    printFile.name
-                  ) : (
-                    <span className="text-gray-400">No file selected</span>
-                  )}
-                </div>
-              </div>
-
-              <p className="mt-3 text-xs font-medium text-gray-600">
-                3D Prints cost $0.10 per gram
-              </p>
-            </section>
-
-            {/* Section divider */}
-            <div className="border-t border-gray-200" />
-
-            {/* Print Settings Section */}
-            <section className="text-left">
-              <h3 className="text-base font-semibold text-byu-navy mb-4">
-                Print Settings
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                {/* Print Quantity */}
-                <div className="md:col-span-3">
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Print Quantity *
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                    value={printQuantity}
-                    onChange={(e) => setPrintQuantity(e.target.value)}
-                  />
-                  {!printQuantity || isQuantityValid ? null : (
-                    <p className="mt-1 text-xs text-red-600">
-                      Enter a quantity of 1 or more.
-                    </p>
-                  )}
-                </div>
-
-                {/* Infill */}
-                <div className="md:col-span-4">
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Infill (Between 5–15) *
-                  </label>
-
-                  <div className="relative">
-                    {/* % suffix */}
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                      %
-                    </span>
-
-                    <input
-                      type="number"
-                      min={5}
-                      max={15}
-                      step={1}
-                      className="w-full rounded-md border border-gray-300 pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                      value={infillPercent}
-                      onChange={(e) => setInfillPercent(e.target.value)}
-                    />
+            {
+              key: "printQuantity",
+              label: "Print Quantity",
+              required: true,
+              type: "number",
+            },
+            {
+              key: "filamentColor",
+              label: "Filament Color (1st choice)",
+              required: true,
+            },
+            {
+              kind: "custom",
+              key: "comments",
+              colSpan: 2,
+              render: () => (
+                <div className="text-left">
+                  {/* Explanation Lines */}
+                  <div className="mt-2 text-xs font-medium text-gray-600">
+                    <p>3D Prints cost $0.10 per gram.</p>
+                    <p className="mt-1.5">Infill set to 15%</p>
                   </div>
 
-                  {!infillPercent || isInfillValid ? null : (
-                    <p className="mt-1 text-xs text-red-600">
-                      Infill must be between 5 and 15.
-                    </p>
-                  )}
-                </div>
-
-                {/* Filament Color */}
-                <div className="md:col-span-5">
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Filament Color (1st choice) *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                    placeholder="e.g., Black"
-                    value={filamentColor}
-                    onChange={(e) => setFilamentColor(e.target.value)}
-                  />
-                </div>
-
-                {/* Additional Comments */}
-                <div className="md:col-span-12">
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
+                  <label className="block text-sm font-medium text-byu-navy mt-5 mb-1">
                     Additional Comments
                   </label>
 
-                  <p className="mb-2 text-xs text-gray-600">
-                    Use this to note any special settings (layer height, speed,
+                  <p className="mt-0.5 text-xs text-gray-500 mb-2">
+                    Use this to note any special settings (layer height,
                     supports, orientation, etc). Most prints will work with our
                     default settings.
                   </p>
@@ -318,14 +254,19 @@ export default function Home() {
                     rows={3}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
                     placeholder="Optional notes..."
-                    value={comments}
-                    onChange={(e) => setComments(e.target.value)}
+                    value={printForm.comments}
+                    onChange={(e) =>
+                      setPrintForm((p) => ({
+                        ...p,
+                        comments: e.target.value,
+                      }))
+                    }
                   />
                 </div>
-              </div>
-            </section>
-          </div>
-        </BaseModal>
+              ),
+            },
+          ]}
+        />
       </div>
     </main>
   );

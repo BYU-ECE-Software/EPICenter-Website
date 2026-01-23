@@ -148,7 +148,7 @@ export default function FormModal<T extends Record<string, any>>({
                 </span>
 
                 {field.helperText ? (
-                  <span className="text-xs text-gray-500 font-normal">
+                  <span className="block text-left text-xs text-gray-500 font-normal">
                     {field.helperText}
                   </span>
                 ) : null}

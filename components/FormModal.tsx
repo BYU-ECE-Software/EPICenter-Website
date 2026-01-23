@@ -19,6 +19,7 @@ type Adornment = {
 type BaseField = {
   key: string;
   label: string;
+  helperText?: string;
   required?: boolean;
   placeholder?: string;
   colSpan?: 1 | 2;
@@ -141,8 +142,16 @@ export default function FormModal<T extends Record<string, any>>({
 
           return (
             <div key={field.key} className={colClass}>
-              <label className={LABEL_CLASS}>
-                {field.label} {field.required ? "*" : null}
+              <label className="flex items-baseline gap-2 mb-1">
+                <span className={LABEL_CLASS}>
+                  {field.label} {field.required ? "*" : null}
+                </span>
+
+                {field.helperText ? (
+                  <span className="text-xs text-gray-500 font-normal">
+                    {field.helperText}
+                  </span>
+                ) : null}
               </label>
 
               {field.kind === "select" ? (

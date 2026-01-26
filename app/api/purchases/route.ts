@@ -1,14 +1,14 @@
 // =============================================
 // FILE: app/api/purchases/route.ts
 // =============================================
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 // GET /api/purchases
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
+    const userId = searchParams.get("userId");
 
     const purchases = await prisma.purchase.findMany({
       where: {
@@ -23,7 +23,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(purchases);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch purchases' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch purchases" },
+      { status: 500 },
+    );
   }
 }
 
@@ -50,6 +53,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(purchase, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create purchase' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create purchase" },
+      { status: 500 },
+    );
   }
 }

@@ -455,7 +455,22 @@ export default function Home() {
                 </div>
               ),
             },
-            // Row 1: PCB Siding + Board Quantity
+            // Row 1: Board Area + Board Quantity
+            {
+              key: "boardArea",
+              label: "Board Area (in²)",
+              required: true,
+              type: "number",
+              adornment: { text: "in²", position: "end" },
+            },
+            {
+              key: "boardQuantity",
+              label: "Board Quantity",
+              required: true,
+              type: "number",
+            },
+
+            // Row 2: PCB Siding + Silkscreen (single sided only)
             {
               key: "pcbSiding",
               label: "PCB Siding",
@@ -469,14 +484,6 @@ export default function Home() {
                 },
               ],
             },
-            {
-              key: "boardQuantity",
-              label: "Board Quantity",
-              required: true,
-              type: "number",
-            },
-
-            // Row 2: Silkscreen (single sided only) + Board Area
             {
               kind: "custom",
               key: "silkscreen",
@@ -513,13 +520,6 @@ export default function Home() {
                   </div>
                 );
               },
-            },
-            {
-              key: "boardArea",
-              label: "Board Area (in²)",
-              required: true,
-              type: "number",
-              adornment: { text: "in²", position: "end" },
             },
 
             // Row 3: Rubout + Cost Estimate

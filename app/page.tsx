@@ -13,6 +13,7 @@ export default function Home() {
   // Modal open/close - for each of the three forms
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [pcbModalOpen, setPcbModalOpen] = useState(false);
+  const [laserModalOpen, setLaserModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // 3D Print Modal Form
@@ -38,9 +39,20 @@ export default function Home() {
     comments: "",
   });
 
+  // Laser Cut Modal Form
+  const [laserForm, setLaserForm] = useState({
+    requestName: "",
+    requestEmail: "",
+    file: null as File | null,
+    confirmedCalendar: false,
+    confirmedResponsibility: false,
+    comments: "",
+  });
+
   // Check that user entered a valid email - one for each form
   const isPrintEmailValid = isEmailValid(printForm.requestEmail);
   const isPcbEmailValid = isEmailValid(pcbForm.requestEmail);
+  const isLaserEmailValid = isEmailValid(laserForm.requestEmail);
 
   // Reset 3d Print Form
   const reset3DPrintForm = () => {
@@ -197,6 +209,58 @@ export default function Home() {
     boardArea: positiveIntError(pcbArea, "area"),
   };
 
+  //Reset Laser cut form modal
+  const resetLaserForm = () => {
+    setLaserForm({
+      requestName: "",
+      requestEmail: "",
+      file: null,
+      confirmedCalendar: false,
+      confirmedResponsibility: false,
+      comments: "",
+    });
+  };
+
+  // close laser cut form modal
+  const closeLaserModal = () => {
+    setLaserModalOpen(false);
+    resetLaserForm();
+  };
+
+  // Required fields gate for Laser Cut
+  const isLaserSubmitDisabled =
+    !laserForm.requestName.trim() ||
+    !isLaserEmailValid ||
+    !laserForm.file ||
+    !laserForm.confirmedCalendar ||
+    !laserForm.confirmedResponsibility;
+
+  // Submitting Laser Cut Form
+  const handleLaserSubmit = async () => {
+    if (isLaserSubmitDisabled) return;
+
+    setSaving(true);
+    try {
+      console.log("Laser Cut Request", {
+        name: laserForm.requestName.trim(),
+        email: laserForm.requestEmail.trim(),
+        file: laserForm.file?.name,
+        confirmedCalendar: laserForm.confirmedCalendar,
+        confirmedResponsibility: laserForm.confirmedResponsibility,
+        comments: laserForm.comments.trim(),
+      });
+
+      closeLaserModal();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Laser cut errors
+  const laserErrors = {
+    requestEmail: emailError(laserForm.requestEmail),
+  };
+
   return (
     <main className="min-h-[calc(100vh-8rem)] bg-gradient-to-br from-byu-royal/5 via-white to-byu-navy/5 flex items-center justify-center px-4 py-12">
       <div className="w-full text-center">
@@ -245,6 +309,7 @@ export default function Home() {
           <button
             type="button"
             className="px-5 py-3 rounded-md border border-byu-royal text-byu-royal bg-white hover:bg-byu-royal hover:text-white transition text-sm font-medium"
+            onClick={() => setLaserModalOpen(true)}
           >
             Laser Cut Request
           </button>
@@ -563,6 +628,268 @@ export default function Home() {
               type: "textarea",
               colSpan: 2,
               helperText: "If this is an RF board, you MUST specify here",
+            },
+          ]}
+        />
+
+        {/* Laser Cut Request Modal */}
+        <FormModal
+          open={laserModalOpen}
+          onClose={closeLaserModal}
+          onSubmit={handleLaserSubmit}
+          title="New Laser Cut Request"
+          size="lg"
+          saving={saving}
+          saveLabel="Submit Request"
+          submitDisabled={isLaserSubmitDisabled}
+          values={laserForm}
+          setValues={setLaserForm}
+          errors={laserErrors}
+          fields={[
+            {
+              key: "requestName",
+              label: "Name",
+              required: true,
+            },
+            {
+              key: "requestEmail",
+              label: "Email",
+              required: true,
+              type: "email",
+            },
+
+            // Custom file picker
+            {
+              kind: "custom",
+              key: "file",
+              colSpan: 2,
+              render: () => (
+                <div className="text-left">
+                  <label className="block text-sm font-medium text-byu-navy mb-1">
+                    Cut File *
+                  </label>
+                  <p className="text-xs text-gray-600 mb-3">
+                    We accept .svg and .pdf
+                  </p>
+
+                  <div className="flex items-center gap-3 mb-2">
+                    <label className="inline-flex items-center justify-center rounded-sm bg-gray-100 border border-black px-2 py-1 text-sm text-black cursor-pointer hover:bg-gray-200 transition">
+                      Choose file
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".svg,.pdf"
+                        onChange={(e) =>
+                          setLaserForm((p) => ({
+                            ...p,
+                            file: e.target.files?.[0] ?? null,
+                          }))
+                        }
+                      />
+                    </label>
+
+                    <div className="text-sm text-gray-700 truncate max-w-[22rem]">
+                      {laserForm.file ? (
+                        laserForm.file.name
+                      ) : (
+                        <span className="text-gray-400">No file selected</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+
+            // Big process explanation + embedded sheet
+            {
+              kind: "custom",
+              key: "processAndCalendar",
+              colSpan: 2,
+              render: () => (
+                <div className="text-left mt-2">
+                  <label className="block text-sm font-semibold text-byu-navy mb-2">
+                    How the process works
+                  </label>
+
+                  <div className="space-y-5 text-sm text-gray-700">
+                    <div>
+                      <p className="font-medium text-byu-navy">Process</p>
+                      <ul className="list-disc pl-5 mt-1 space-y-1">
+                        <li>
+                          Sign up for a time on the{" "}
+                          <a
+                            href={
+                              process.env
+                                .NEXT_PUBLIC_LASER_SCHEDULE_SHEET_VIEW_URL
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline hover:text-blue-800"
+                          >
+                            Google Sheets
+                          </a>
+                          .
+                        </li>
+                        <li>
+                          Come meet with a shop tech at the time you signed up
+                          and process your job.
+                        </li>
+                        <li>
+                          You are required to be present during the entire cut.
+                        </li>
+                        <li>
+                          If you are not able to be present, a shop tech can
+                          watch your job for $20/hour.
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-byu-navy">Material</p>
+                      <ul className="list-disc pl-5 mt-1 space-y-1">
+                        <li>
+                          You are responsible for providing your own material.
+                        </li>
+                        <li>
+                          There is a limited selection of material in stock that
+                          you can purchase from the EPICenter.
+                        </li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-byu-navy">
+                        Disallowed materials
+                      </p>
+                      <ul className="list-disc pl-5 mt-1 space-y-1">
+                        <li>PVC - emits pure chlorine gas</li>
+                        <li>ABS - emits cyanide gas</li>
+                        <li>HDPE - melts and catches fire</li>
+                        <li>PolyStyrene foam - catches fire</li>
+                        <li>Polypropylene foam - catches fire</li>
+                        <li>Fiberglass - emits fumes</li>
+                      </ul>
+                      <p className="mt-1 text-xs text-gray-500">
+                        *please do not bring in any unidentified material
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-byu-navy">
+                        Common and safe materials
+                      </p>
+                      <ul className="list-disc pl-5 mt-1 space-y-1">
+                        <li>Acrylic</li>
+                        <li>Most woods (max thickness for cutting = 1/4")</li>
+                        <li>Foamboard</li>
+                        <li>Cardboard</li>
+                        <li>Paper/Cardstock</li>
+                        <li>Leather</li>
+                        <li>Magnetic sheet</li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-byu-navy">Metal etching</p>
+                      <p className="mt-1">
+                        Our laser cutter is not powerful enough to cut or etch
+                        metal
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-byu-navy">
+                        Other considerations
+                      </p>
+                      <p className="mt-1">
+                        We will not process jobs that take over 8 hours. You'll
+                        need to divide these jobs into shorter jobs.
+                      </p>
+                    </div>
+
+                    {/* Required checkboxes */}
+                    <div className="mt-6 space-y-3">
+                      <label className="block text-sm font-semibold text-byu-navy mb-2">
+                        Requirements *
+                      </label>
+                      <label className="flex items-start gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={laserForm.confirmedCalendar}
+                          onChange={(e) =>
+                            setLaserForm((p) => ({
+                              ...p,
+                              confirmedCalendar: e.target.checked,
+                            }))
+                          }
+                        />
+                        <span>
+                          I have submitted a time on the scheduling calendar.
+                        </span>
+                      </label>
+
+                      <label className="flex items-start gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={laserForm.confirmedResponsibility}
+                          onChange={(e) =>
+                            setLaserForm((p) => ({
+                              ...p,
+                              confirmedResponsibility: e.target.checked,
+                            }))
+                          }
+                        />
+                        <span>
+                          I understand that I am responsible for watching my
+                          laser cut the entire time (unless I want to pay a
+                          $20/hour fee)
+                        </span>
+                      </label>
+
+                      {(!laserForm.confirmedCalendar ||
+                        !laserForm.confirmedResponsibility) && (
+                        <p className="text-xs text-gray-500">
+                          Both acknowledgements must be checked before
+                          submitting.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              kind: "custom",
+              key: "comments",
+              colSpan: 2,
+              render: () => (
+                <div className="text-left">
+                  <label className="block text-sm font-medium text-byu-navy mt-4 mb-1">
+                    Additional Comments
+                  </label>
+
+                  <p className="mt-0.5 text-xs text-gray-500 mb-2">
+                    Use this to note any special settings (cutting speed, power
+                    level, # of passes raster infill, etc). Most jobs will work
+                    with our default settings.
+                  </p>
+
+                  <textarea
+                    rows={3}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
+                    placeholder="Optional notes..."
+                    value={printForm.comments}
+                    onChange={(e) =>
+                      setPrintForm((p) => ({
+                        ...p,
+                        comments: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              ),
             },
           ]}
         />

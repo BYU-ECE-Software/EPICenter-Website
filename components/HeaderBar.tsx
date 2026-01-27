@@ -172,57 +172,68 @@ const HeaderBar: React.FC = () => {
               Lab Equipment
             </Link>
 
-            {/* Project Requests with nested items */}
-            <div ref={projectRequestsMobileWrapRef}>
-              <button
-                type="button"
-                onClick={() => setProjectRequestsOpen((open) => !open)}
-                className={`flex items-center justify-between px-6 py-4 text-left hover:bg-[#FAFAFA] ${
-                  projectRequestsOpen ? "bg-[#FAFAFA]" : ""
-                }`}
-              >
-                <span>Project Requests</span>
-                <FiChevronDown
-                  className="w-4 h-4 text-byu-navy"
-                  aria-hidden="true"
-                />
-              </button>
+            {/* Project Requests with nested items for employees or list of individual projects per student */}
+            {isEmployee ? (
+              <div ref={projectRequestsMobileWrapRef}>
+                <button
+                  type="button"
+                  onClick={() => setProjectRequestsOpen((open) => !open)}
+                  className={`flex items-center justify-between px-6 py-4 text-left hover:bg-[#FAFAFA] ${
+                    projectRequestsOpen ? "bg-[#FAFAFA]" : ""
+                  }`}
+                >
+                  <span>Project Requests</span>
+                  <FiChevronDown
+                    className="w-4 h-4 text-byu-navy"
+                    aria-hidden="true"
+                  />
+                </button>
 
-              {projectRequestsOpen && (
-                <div className="flex flex-col text-sm">
-                  <Link
-                    href="/3Dprint"
-                    onClick={() => {
-                      setProjectRequestsOpen(false);
-                      setMobileOpen(false);
-                    }}
-                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
-                  >
-                    3D Print
-                  </Link>
-                  <Link
-                    href="/PCBmill"
-                    onClick={() => {
-                      setProjectRequestsOpen(false);
-                      setMobileOpen(false);
-                    }}
-                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
-                  >
-                    PCB Mill
-                  </Link>
-                  <Link
-                    href="/laserCut"
-                    onClick={() => {
-                      setProjectRequestsOpen(false);
-                      setMobileOpen(false);
-                    }}
-                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
-                  >
-                    Laser Cut
-                  </Link>
-                </div>
-              )}
-            </div>
+                {projectRequestsOpen && (
+                  <div className="flex flex-col text-sm">
+                    <Link
+                      href="/3Dprint"
+                      onClick={() => {
+                        setProjectRequestsOpen(false);
+                        setMobileOpen(false);
+                      }}
+                      className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                    >
+                      3D Print
+                    </Link>
+                    <Link
+                      href="/PCBmill"
+                      onClick={() => {
+                        setProjectRequestsOpen(false);
+                        setMobileOpen(false);
+                      }}
+                      className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                    >
+                      PCB Mill
+                    </Link>
+                    <Link
+                      href="/laserCut"
+                      onClick={() => {
+                        setProjectRequestsOpen(false);
+                        setMobileOpen(false);
+                      }}
+                      className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                    >
+                      Laser Cut
+                    </Link>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Student view */
+              <Link
+                href="/projectRequests"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
+              >
+                Project Requests
+              </Link>
+            )}
 
             {isEmployee && (
               <Link
@@ -287,48 +298,58 @@ const HeaderBar: React.FC = () => {
             Lab Equipment
           </Link>
 
-          {/* Project Requests tab with dropdown */}
-          <div className="relative" ref={projectRequestsDesktopWrapRef}>
-            <button
-              type="button"
-              className={`px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover inline-flex items-center gap-2 ${
-                projectRequestsOpen ? "bg-[#FAFAFA] nav-link-active" : ""
-              }`}
-              onClick={() => setProjectRequestsOpen((open) => !open)}
-            >
-              <span>Project Requests</span>
-              <FiChevronDown
-                className="w-3 h-3 text-byu-navy"
-                aria-hidden="true"
-              />
-            </button>
+          {/* Project Requests tab with dropdown for employees or list of individual projects per student */}
+          {isEmployee ? (
+            <div className="relative" ref={projectRequestsDesktopWrapRef}>
+              <button
+                type="button"
+                className={`px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover inline-flex items-center gap-2 ${
+                  projectRequestsOpen ? "bg-[#FAFAFA] nav-link-active" : ""
+                }`}
+                onClick={() => setProjectRequestsOpen((open) => !open)}
+              >
+                <span>Project Requests</span>
+                <FiChevronDown
+                  className="w-3 h-3 text-byu-navy"
+                  aria-hidden="true"
+                />
+              </button>
 
-            {projectRequestsOpen && (
-              <div className="absolute left-0 top-full mt-0 w-64 bg-white border border-gray-200 shadow-lg">
-                <Link
-                  href="/3Dprint"
-                  onClick={() => setProjectRequestsOpen(false)}
-                  className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
-                >
-                  3D Print
-                </Link>
-                <Link
-                  href="/PCBmill"
-                  onClick={() => setProjectRequestsOpen(false)}
-                  className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
-                >
-                  PCB Mill
-                </Link>
-                <Link
-                  href="/laserCut"
-                  onClick={() => setProjectRequestsOpen(false)}
-                  className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
-                >
-                  Laser Cut
-                </Link>
-              </div>
-            )}
-          </div>
+              {projectRequestsOpen && (
+                <div className="absolute left-0 top-full mt-0 w-64 bg-white border border-gray-200 shadow-lg">
+                  <Link
+                    href="/3Dprint"
+                    onClick={() => setProjectRequestsOpen(false)}
+                    className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                  >
+                    3D Print
+                  </Link>
+                  <Link
+                    href="/PCBmill"
+                    onClick={() => setProjectRequestsOpen(false)}
+                    className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                  >
+                    PCB Mill
+                  </Link>
+                  <Link
+                    href="/laserCut"
+                    onClick={() => setProjectRequestsOpen(false)}
+                    className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                  >
+                    Laser Cut
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Student view */
+            <Link
+              href="/projectRequests"
+              className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
+            >
+              Project Requests
+            </Link>
+          )}
 
           {/* Loans tab (employee only) */}
           {isEmployee && (

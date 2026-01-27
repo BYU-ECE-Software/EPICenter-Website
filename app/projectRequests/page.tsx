@@ -9,14 +9,17 @@ export default function Page() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isEmployee) {
-      router.replace("/");
+    if (isEmployee) {
+      router.replace("/3Dprint");
     }
   }, [isEmployee, router]);
   return (
     <main style={{ padding: "2rem" }}>
-      <h1>3D Print</h1>
-      <p>This page will be for 3D Print.</p>
+      <h1>Student Project Requests</h1>
+      <p>
+        This page will be what students see for their individual project
+        requests
+      </p>
     </main>
   );
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRole } from "@/app/providers/RoleProvider";
+import ProjectWorkflow from "@/components/ProjectWorkflow";
+import type { DataTableColumn } from "@/components/DataTable";
 
-export default function Page() {
+export default function PrintPage() {
   const { isEmployee } = useRole();
   const router = useRouter();
 
@@ -13,10 +15,85 @@ export default function Page() {
       router.replace("/");
     }
   }, [isEmployee, router]);
+
+  const printColumns = useMemo<DataTableColumn[]>(
+    () => [{ key: "quantity", header: "Quantity" }],
+    [],
+  );
+
+  // dummy data with one row for each stage
+  const data = [
+    {
+      id: 1,
+      status: "UNFULFILLED",
+      assignedTo: null,
+      quantity: 2,
+      customerName: "Sam Student",
+      customerEmail: "sam@byu.edu",
+      requestedAt: "2026-01-25",
+      updatedAt: "2026-01-25",
+    },
+    {
+      id: 2,
+      status: "ASSIGNED",
+      assignedTo: "Lara",
+      quantity: 1,
+      customerName: "Taylor Tech",
+      customerEmail: "taylor@byu.edu",
+      requestedAt: "2026-01-24",
+      updatedAt: "2026-01-26",
+    },
+    {
+      id: 3,
+      status: "IN_PROGRESS",
+      assignedTo: "M. Alvarez",
+      quantity: 3,
+      customerName: "Jamie Jay",
+      customerEmail: "jamie@byu.edu",
+      requestedAt: "2026-01-23",
+      updatedAt: "2026-01-26",
+    },
+    {
+      id: 4,
+      status: "READY_FOR_PICKUP",
+      assignedTo: "Dr. Jensen",
+      quantity: 1,
+      customerName: "Avery A.",
+      customerEmail: "avery@byu.edu",
+      requestedAt: "2026-01-21",
+      updatedAt: "2026-01-26",
+    },
+    {
+      id: 5,
+      status: "FINISHED",
+      assignedTo: "S. Kim",
+      quantity: 2,
+      customerName: "Chris C.",
+      customerEmail: "chris@byu.edu",
+      requestedAt: "2026-01-20",
+      updatedAt: "2026-01-22",
+    },
+    {
+      id: 6,
+      status: "CANCELED",
+      assignedTo: "Lara",
+      quantity: 1,
+      customerName: "Pat P.",
+      customerEmail: "pat@byu.edu",
+      requestedAt: "2026-01-19",
+      updatedAt: "2026-01-19",
+    },
+  ];
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>3D Print</h1>
-      <p>This page will be for 3D Print.</p>
+    <main className="min-h-[calc(100vh-8rem)] bg-white px-12 py-8">
+      <h1 className="text-3xl font-bold text-byu-navy">3D Print Requests</h1>
+
+      {/* Workflow Component */}
+      <ProjectWorkflow
+        title="3D Print Workflow"
+        columns={printColumns}
+        data={data}
+      />
     </main>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DataTable, { type DataTableColumn } from "@/components/DataTable";
 import {
   FiEdit2,
@@ -14,6 +14,10 @@ import {
 } from "react-icons/fi";
 import RowActionMenu from "./RowActionMenu";
 import Pagination from "@/components/Pagination";
+import FormModal from "@/components/FormModal";
+import { fetchUsers } from "@/lib/api/usersApi";
+import { User } from "@/types/user";
+import ConfirmModal from "./ConfirmModal";
 
 type WorkflowStage =
   | "UNFULFILLED"
@@ -31,6 +35,60 @@ const WORKFLOW_STAGES: { key: WorkflowStage; label: string }[] = [
   { key: "FINISHED", label: "Finished" },
   { key: "CANCELED", label: "Canceled" },
 ];
+
+// 3 types of Project Requests
+type ProjectType = "LASER" | "PRINT3D" | "PCB";
+
+// Defines how a single detail field is displayed in the Start Job modal
+type DetailRow = {
+  label: string;
+  value: (row: any) => React.ReactNode;
+  showIf?: (row: any) => boolean;
+};
+
+// Start Job modal details for each project type
+const START_JOB_DETAILS: Record<string, DetailRow[]> = {
+  // Laser cut has no project-specific details
+  LASER: [],
+
+  // 3D Print details
+  PRINT3D: [
+    {
+      label: "Print Quantity",
+      value: (r) => r.quantity ?? "",
+    },
+    {
+      label: "Color",
+      value: (r) => r.color ?? "",
+    },
+  ],
+
+  // PCB Mill details
+  PCB: [
+    {
+      label: "Board Quantity",
+      value: (r) => r.quantity ?? "",
+    },
+    {
+      label: "Board Area",
+      value: (r) => (r.boardArea ? `${r.boardArea} in²` : ""),
+    },
+    {
+      label: "Siding",
+      value: (r) => r.siding ?? "", // "Single" or "Double"
+    },
+    {
+      label: "Details",
+      value: (r) => (
+        <div className="space-y-0.5">
+          <div>{r.silkscreen ? "Silkscreen" : "No Silkscreen"}</div>
+
+          {r.rubout ? <div>Rubout</div> : null}
+        </div>
+      ),
+    },
+  ],
+};
 
 type ProjectWorkflowProps = {
   columns: DataTableColumn[];
@@ -107,6 +165,114 @@ export default function ProjectWorkflow({
 }: ProjectWorkflowProps) {
   const [activeStage, setActiveStage] = useState<WorkflowStage>("UNFULFILLED");
 
+  // -------- Assign Job Modal Code --------
+
+  // Assign modal state
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignSaving, setAssignSaving] = useState(false);
+  const [assignTargetRow, setAssignTargetRow] = useState<any | null>(null);
+
+  // Form values for the assign modal
+  const [assignForm, setAssignForm] = useState({
+    technicianUserId: "", // store as string for <select>
+  });
+
+  // Users for Assign Job dropdown
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+
+  // Load technicians when the Assign Job Modal opens
+  useEffect(() => {
+    if (!assignOpen) return;
+
+    // Only fetch once per session
+    if (users.length) return;
+
+    setUsersLoading(true);
+    setUsersError(null);
+
+    fetchUsers()
+      .then((data) => setUsers(data))
+      .catch((e) => setUsersError(e.message ?? "Failed to load users"))
+      .finally(() => setUsersLoading(false));
+  }, [assignOpen, users.length]);
+
+  // open Assign Job Modal
+  const openAssignModal = (row: any) => {
+    setAssignTargetRow(row);
+    setAssignForm({ technicianUserId: "" });
+    setAssignOpen(true);
+  };
+
+  // close Assign Job Modal
+  const closeAssignModal = () => {
+    setAssignOpen(false);
+    setAssignTargetRow(null);
+  };
+
+  // Disable Submission of the Job Assignment Modal until a technician has been selected
+  const isAssignSubmitDisabled =
+    assignSaving || usersLoading || !assignForm.technicianUserId;
+
+  // Submit Assign Job Modal
+  const submitAssignModal = async () => {
+    // Look-only for now
+    console.log("assign", {
+      row: assignTargetRow,
+      technicianUserId: assignForm.technicianUserId,
+    });
+
+    // fake save feel
+    setAssignSaving(true);
+    try {
+      // later: call backend to assign
+      closeAssignModal();
+    } finally {
+      setAssignSaving(false);
+    }
+  };
+
+  // -------- Start Job Modal Code --------
+
+  // state
+  const [startOpen, setStartOpen] = useState(false);
+  const [startSaving, setStartSaving] = useState(false);
+  const [startTargetRow, setStartTargetRow] = useState<any | null>(null);
+
+  const [startForm, setStartForm] = useState({
+    notes: "",
+  });
+
+  // open Start Job Modal
+  const openStartModal = (row: any) => {
+    setStartTargetRow(row);
+    setStartForm({ notes: "" });
+    setStartOpen(true);
+  };
+
+  // close Start Job Modal
+  const closeStartModal = () => {
+    setStartOpen(false);
+    setStartTargetRow(null);
+  };
+
+  // Submit Start Job Modal
+  const submitStartModal = async () => {
+    console.log("start job", {
+      row: startTargetRow,
+      notes: startForm.notes,
+    });
+
+    setStartSaving(true);
+    try {
+      // later: call backend to mark as started
+      closeStartModal();
+    } finally {
+      setStartSaving(false);
+    }
+  };
+
   // Pagination state (placeholder for now)
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -153,7 +319,7 @@ export default function ProjectWorkflow({
               title="Assign Job"
               label="Assign Job"
               icon={<FiUserPlus className="h-4 w-4" />}
-              onClick={() => handleStageAdvance(row)}
+              onClick={() => openAssignModal(row)}
             />
           );
         }
@@ -164,7 +330,7 @@ export default function ProjectWorkflow({
               title="Start Job"
               label="Start Job"
               icon={<FiPlay className="h-4 w-4" />}
-              onClick={() => handleStageAdvance(row)}
+              onClick={() => openStartModal(row)}
             />
           );
         }
@@ -284,6 +450,131 @@ export default function ProjectWorkflow({
         pageSize={pageSize}
         setPageSize={setPageSize}
         itemLabel="Requests"
+      />
+
+      {/* Assign Job Modal */}
+      <FormModal
+        open={assignOpen}
+        onClose={closeAssignModal}
+        onSubmit={submitAssignModal}
+        title="Assign Job"
+        size="sm"
+        saving={assignSaving}
+        saveLabel="Assign"
+        submitDisabled={isAssignSubmitDisabled}
+        values={assignForm}
+        setValues={setAssignForm}
+        fields={[
+          {
+            kind: "select",
+            key: "technicianUserId",
+            label: "Technician",
+            required: true,
+            colSpan: 2,
+            placeholder: "Select a technician",
+            options: users
+              .slice()
+              .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
+              .map((u) => ({
+                value: String(u.id),
+                label: u.name ?? u.email,
+              })),
+          },
+        ]}
+      />
+
+      {/* Start Job Modal */}
+      <ConfirmModal
+        open={startOpen}
+        title={`Start Job for ${startTargetRow?.customerName ?? "this request"}`}
+        message={
+          startTargetRow ? (
+            <div className="space-y-4 text-sm">
+              {/* Email */}
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm text-gray-500">Email:</span>
+                <span className="text-sm font-medium text-byu-navy">
+                  {startTargetRow.customerEmail ?? ""}
+                </span>
+              </div>
+
+              {/* File */}
+              <div>
+                <div className="text-xs text-gray-500">Project File</div>
+                <div className="mt-1 flex items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                  <div className="min-w-0 truncate font-medium text-byu-navy">
+                    {startTargetRow.projectFileName ?? ""}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      // TODO: wire up download later
+                      console.log("download file", startTargetRow);
+                    }}
+                    disabled={!startTargetRow.projectFileName}
+                    title={
+                      startTargetRow.projectFileName
+                        ? "Download"
+                        : "No file available"
+                    }
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
+
+              {/* Project-type details */}
+              {START_JOB_DETAILS[startTargetRow.projectType as ProjectType]
+                ?.length ? (
+                <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {START_JOB_DETAILS[
+                      startTargetRow.projectType as ProjectType
+                    ]
+                      .filter((d) =>
+                        d.showIf ? d.showIf(startTargetRow) : true,
+                      )
+                      .map((d) => (
+                        <div
+                          key={d.label}
+                          className="flex items-baseline gap-2"
+                        >
+                          <span className="text-sm text-gray-500">
+                            {d.label}:
+                          </span>
+                          <span className="text-sm font-medium text-byu-navy">
+                            {d.value(startTargetRow) || ""}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Comments (optional) */}
+              {startTargetRow.comments ? (
+                <div>
+                  <div className="text-sm font-medium text-byu-navy mb-1">
+                    Comments
+                  </div>
+                  <div className="text-xs text-gray-600 whitespace-pre-wrap">
+                    {startTargetRow.comments}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null
+        }
+        confirmLabel="Start Job"
+        cancelLabel="Cancel"
+        busy={startSaving}
+        busyLabel="Saving…"
+        variant="primary"
+        closeOnBackdrop={true}
+        onCancel={closeStartModal}
+        onConfirm={submitStartModal}
       />
     </section>
   );

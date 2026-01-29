@@ -12,15 +12,26 @@ export default function PCBMillPage() {
 
   useEffect(() => {
     if (!isEmployee) {
-      router.replace("/");
+      router.replace("/projectRequests");
     }
   }, [isEmployee, router]);
 
   const printColumns = useMemo<DataTableColumn[]>(
     () => [
       { key: "quantity", header: "Quantity" },
-      { key: "boardSides", header: "Board Sides" },
-      { key: "features", header: "Features" },
+      { key: "siding", header: "Board Sides" },
+      {
+        key: "features",
+        header: "Features",
+        render: (row: any) => {
+          const features: string[] = [];
+
+          if (row.silkscreen) features.push("Silkscreen");
+          if (row.rubout) features.push("Rubout");
+
+          return features.length ? features.join(", ") : "None";
+        },
+      },
     ],
     [],
   );
@@ -32,8 +43,9 @@ export default function PCBMillPage() {
       status: "UNFULFILLED",
       assignedTo: null,
       quantity: 2,
-      boardSides: "Single",
-      features: "Rubout, Silkscreen",
+      siding: "Single",
+      silkscreen: true,
+      rubout: true,
       customerName: "Sam Student",
       customerEmail: "sam@byu.edu",
       requestedAt: "2026-01-25",
@@ -41,23 +53,29 @@ export default function PCBMillPage() {
     },
     {
       id: 2,
+      projectType: "PCB",
       status: "ASSIGNED",
       assignedTo: "Lara",
       quantity: 1,
-      boardSides: "Double",
-      features: "Rubout",
+      boardArea: 12.5,
+      siding: "Single",
+      silkscreen: false,
+      rubout: true,
       customerName: "Taylor Tech",
       customerEmail: "taylor@byu.edu",
       requestedAt: "2026-01-24",
       updatedAt: "2026-01-26",
+      comments: "Please prioritize if possible.",
+      projectFileName: "pcb_design_v3.gbr",
     },
     {
       id: 3,
       status: "IN_PROGRESS",
       assignedTo: "M. Alvarez",
       quantity: 3,
-      boardSides: "Single",
-      features: "Silkscreen",
+      siding: "Single",
+      silkscreen: true,
+      rubout: false,
       customerName: "Jamie Jay",
       customerEmail: "jamie@byu.edu",
       requestedAt: "2026-01-23",
@@ -68,8 +86,9 @@ export default function PCBMillPage() {
       status: "READY_FOR_PICKUP",
       assignedTo: "Dr. Jensen",
       quantity: 1,
-      boardSides: "Double",
-      features: "None",
+      siding: "Double",
+      silkscreen: false,
+      rubout: false,
       customerName: "Avery A.",
       customerEmail: "avery@byu.edu",
       requestedAt: "2026-01-21",
@@ -80,8 +99,9 @@ export default function PCBMillPage() {
       status: "FINISHED",
       assignedTo: "S. Kim",
       quantity: 2,
-      boardSides: "Single",
-      features: "None",
+      siding: "Single",
+      silkscreen: false,
+      rubout: false,
       customerName: "Chris C.",
       customerEmail: "chris@byu.edu",
       requestedAt: "2026-01-20",
@@ -92,8 +112,9 @@ export default function PCBMillPage() {
       status: "CANCELED",
       assignedTo: "Lara",
       quantity: 1,
-      boardSides: "Single",
-      features: "Silkscreen",
+      siding: "Single",
+      silkscreen: true,
+      rubout: false,
       customerName: "Pat P.",
       customerEmail: "pat@byu.edu",
       requestedAt: "2026-01-19",

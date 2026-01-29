@@ -4,7 +4,6 @@ import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useRole } from "@/app/providers/RoleProvider";
 import ProjectWorkflow from "@/components/ProjectWorkflow";
-import type { DataTableColumn } from "@/components/DataTable";
 
 export default function LaserCutPage() {
   const { isEmployee } = useRole();
@@ -12,7 +11,7 @@ export default function LaserCutPage() {
 
   useEffect(() => {
     if (!isEmployee) {
-      router.replace("/");
+      router.replace("/projectRequests");
     }
   }, [isEmployee, router]);
 
@@ -30,11 +29,13 @@ export default function LaserCutPage() {
     {
       id: 2,
       status: "ASSIGNED",
+      projectType: "LASER",
       assignedTo: "Lara",
       customerName: "Taylor Tech",
       customerEmail: "taylor@byu.edu",
       requestedAt: "2026-01-24",
       updatedAt: "2026-01-26",
+      projectFileName: "pcb_design_v3.gbr",
     },
     {
       id: 3,

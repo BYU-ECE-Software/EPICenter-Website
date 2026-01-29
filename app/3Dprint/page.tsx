@@ -12,7 +12,7 @@ export default function PrintPage() {
 
   useEffect(() => {
     if (!isEmployee) {
-      router.replace("/");
+      router.replace("/projectRequests");
     }
   }, [isEmployee, router]);
 
@@ -35,13 +35,17 @@ export default function PrintPage() {
     },
     {
       id: 2,
+      projectType: "PRINT3D",
       status: "ASSIGNED",
       assignedTo: "Lara",
       quantity: 1,
+      color: "Black",
       customerName: "Taylor Tech",
       customerEmail: "taylor@byu.edu",
       requestedAt: "2026-01-24",
       updatedAt: "2026-01-26",
+      comments: "Please prioritize if possible.",
+      projectFileName: "pcb_design_v3.gbr",
     },
     {
       id: 3,

@@ -89,11 +89,7 @@ export default function PrintPage() {
       <h1 className="text-3xl font-bold text-byu-navy">3D Print Requests</h1>
 
       {/* Workflow Component */}
-      <ProjectWorkflow
-        title="3D Print Workflow"
-        columns={printColumns}
-        data={data}
-      />
+      <ProjectWorkflow columns={printColumns} data={data} />
     </main>
   );
 }

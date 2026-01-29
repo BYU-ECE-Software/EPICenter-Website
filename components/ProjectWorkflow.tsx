@@ -33,7 +33,6 @@ const WORKFLOW_STAGES: { key: WorkflowStage; label: string }[] = [
 ];
 
 type ProjectWorkflowProps = {
-  title: string;
   columns: DataTableColumn[];
   data: any[];
 };
@@ -103,7 +102,6 @@ function RowActions({
 }
 
 export default function ProjectWorkflow({
-  title,
   columns,
   data,
 }: ProjectWorkflowProps) {

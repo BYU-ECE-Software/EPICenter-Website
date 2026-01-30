@@ -6,7 +6,6 @@ import SearchBar from "@/components/SearchBar";
 import PrimaryButton from "@/components/PrimaryButton";
 import DataTable from "@/components/DataTable";
 import FormModal from "@/components/FormModal";
-import BaseModal from "@/components/BaseModal";
 import Pagination from "@/components/Pagination";
 import RowActionMenu from "@/components/RowActionMenu";
 import ConfirmModal from "@/components/ConfirmModal";

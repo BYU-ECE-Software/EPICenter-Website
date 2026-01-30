@@ -8,7 +8,7 @@ type Variant = "danger" | "primary";
 type ConfirmModalProps = {
   open: boolean;
   title?: string;
-  message?: string;
+  message?: ReactNode;
 
   confirmLabel?: string;
   cancelLabel?: string;

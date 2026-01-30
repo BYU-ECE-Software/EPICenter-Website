@@ -26,6 +26,8 @@ export default function LaserCutPage() {
       customerEmail: "sam@byu.edu",
       requestedAt: "2026-01-25",
       updatedAt: "2026-01-25",
+      projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
     {
       id: 2,
@@ -37,6 +39,7 @@ export default function LaserCutPage() {
       requestedAt: "2026-01-24",
       updatedAt: "2026-01-26",
       projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
     {
       id: 3,
@@ -47,6 +50,8 @@ export default function LaserCutPage() {
       customerEmail: "jamie@byu.edu",
       requestedAt: "2026-01-23",
       updatedAt: "2026-01-26",
+      projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
     {
       id: 4,
@@ -57,6 +62,8 @@ export default function LaserCutPage() {
       customerEmail: "avery@byu.edu",
       requestedAt: "2026-01-21",
       updatedAt: "2026-01-26",
+      projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
     {
       id: 5,
@@ -67,6 +74,8 @@ export default function LaserCutPage() {
       customerEmail: "chris@byu.edu",
       requestedAt: "2026-01-20",
       updatedAt: "2026-01-22",
+      projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
     {
       id: 6,
@@ -77,6 +86,8 @@ export default function LaserCutPage() {
       customerEmail: "pat@byu.edu",
       requestedAt: "2026-01-19",
       updatedAt: "2026-01-19",
+      projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
   ];
   return (

@@ -18,6 +18,12 @@ import FormModal, { FormModalField } from "@/components/FormModal";
 import { fetchUsers } from "@/lib/api/usersApi";
 import { User } from "@/types/user";
 import ConfirmModal from "./ConfirmModal";
+import Print3DRequestFormModal from "@/components/forms/Print3DRequestForm";
+import type { Print3DFormValues } from "@/components/forms/Print3DRequestForm";
+import PcbMillRequestFormModal from "@/components/forms/PCBMillRequestForm";
+import type { PcbMillFormValues } from "@/components/forms/PCBMillRequestForm";
+import LaserCutRequestFormModal from "@/components/forms/LaserRequestForm";
+import type { LaserCutFormValues } from "@/components/forms/LaserRequestForm";
 
 type WorkflowStage =
   | "UNFULFILLED"
@@ -372,6 +378,148 @@ export default function ProjectWorkflow({
     ];
   };
 
+  // -------- Edit Request Modal Code --------
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editTargetRow, setEditTargetRow] = useState<any | null>(null);
+  const [editProjectType, setEditProjectType] = useState<ProjectType | null>(
+    null,
+  );
+
+  // One form state per project type
+  // 3D Print State
+  const [editPrint3DForm, setEditPrint3DForm] = useState<Print3DFormValues>({
+    requestName: "",
+    requestEmail: "",
+    file: null,
+    printQuantity: "1",
+    filamentColor: "",
+    comments: "",
+    technicianNotes: "",
+  });
+
+  // PCB Mill State
+  const [editPcbForm, setEditPcbForm] = useState<PcbMillFormValues>({
+    requestName: "",
+    requestEmail: "",
+    file: null,
+    pcbSiding: "single",
+    boardQuantity: "1",
+    silkscreen: "no",
+    boardArea: "",
+    rubout: "no",
+    comments: "",
+    technicianNotes: "",
+  });
+
+  // Laser Cut State
+  const [editLaserForm, setEditLaserForm] = useState<LaserCutFormValues>({
+    requestName: "",
+    requestEmail: "",
+    file: null,
+    confirmedCalendar: false,
+    confirmedResponsibility: false,
+    comments: "",
+    technicianNotes: "",
+  });
+
+  // Turn a PRINT3D table row into the exact form shape the 3D Print modal expects (for pre-filling edit).
+  function mapRowToPrint3DForm(row: any): Print3DFormValues {
+    return {
+      requestName: row.customerName ?? row.requestName ?? "",
+      requestEmail: row.customerEmail ?? row.requestEmail ?? "",
+      file: null,
+      printQuantity: String(row.quantity ?? row.printQuantity ?? "1"),
+      filamentColor: row.color ?? row.filamentColor ?? "",
+      comments: row.comments ?? "",
+      technicianNotes: row.technicianNotes ?? "",
+    };
+  }
+
+  // Turn a PCB table row into the exact form shape the PCB modal expects (and normalize booleans/labels).
+  function mapRowToPcbForm(row: any): PcbMillFormValues {
+    return {
+      requestName: row.customerName ?? row.requestName ?? "",
+      requestEmail: row.customerEmail ?? row.requestEmail ?? "",
+      file: null,
+      pcbSiding:
+        (row.siding ?? row.pcbSiding ?? "single").toString().toLowerCase() ===
+        "double"
+          ? "double"
+          : "single",
+      boardQuantity: String(row.quantity ?? row.boardQuantity ?? "1"),
+      silkscreen:
+        row.silkscreen === true || row.silkscreen === "yes" ? "yes" : "no",
+      boardArea: String(row.boardArea ?? ""),
+      rubout: row.rubout === true || row.rubout === "yes" ? "yes" : "no",
+      comments: row.comments ?? "",
+      technicianNotes: row.technicianNotes ?? "",
+    };
+  }
+
+  // Turn a LASER table row into the exact form shape the Laser modal expects (for pre-filling edit).
+  function mapRowToLaserForm(row: any): LaserCutFormValues {
+    return {
+      requestName: row.customerName ?? row.requestName ?? "",
+      requestEmail: row.customerEmail ?? row.requestEmail ?? "",
+      file: null,
+      confirmedCalendar: Boolean(row.confirmedCalendar),
+      confirmedResponsibility: Boolean(row.confirmedResponsibility),
+      comments: row.comments ?? "",
+      technicianNotes: row.technicianNotes ?? "",
+    };
+  }
+
+  // Open the edit modal and pre-fill the correct form based on the project's type.
+  const handleEdit = (row: any) => {
+    const type = row.projectType as ProjectType;
+
+    setEditTargetRow(row);
+    setEditProjectType(type);
+
+    if (type === "PRINT3D") {
+      setEditPrint3DForm(mapRowToPrint3DForm(row));
+    } else if (type === "PCB") {
+      setEditPcbForm(mapRowToPcbForm(row));
+    } else {
+      // LASER
+      setEditLaserForm(mapRowToLaserForm(row));
+    }
+
+    setEditOpen(true);
+  };
+
+  // Close Change Status modal and reset state
+  const closeEditModal = () => {
+    setEditOpen(false);
+    setEditTargetRow(null);
+    setEditProjectType(null);
+  };
+
+  // Submit Edit Modal
+  const submitEditModal = async () => {
+    setEditSaving(true);
+    try {
+      if (editProjectType === "PRINT3D") {
+        console.log("edit PRINT3D", {
+          row: editTargetRow,
+          values: editPrint3DForm,
+        });
+      } else if (editProjectType === "PCB") {
+        console.log("edit PCB", { row: editTargetRow, values: editPcbForm });
+      } else if (editProjectType === "LASER") {
+        console.log("edit LASER", {
+          row: editTargetRow,
+          values: editLaserForm,
+        });
+      }
+      closeEditModal();
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   // -------- Change Status Modal Code (FormModal) --------
 
   // Workflow stages that are allowed for manual status changes
@@ -491,11 +639,6 @@ export default function ProjectWorkflow({
   // TEMP handlers (buttons visible, no real behavior yet)
   const handleStageAdvance = (row: any) => {
     console.log("advance workflow", row, "stage:", activeStage);
-  };
-
-  // TEMP handlers (we’ll replace with real modal openers later)
-  const handleEdit = (row: any) => {
-    console.log("edit", row, "stage:", activeStage);
   };
 
   // Left-most workflow action column (only for non-finished/non-canceled)
@@ -794,6 +937,66 @@ export default function ProjectWorkflow({
         values={completeForm}
         setValues={setCompleteForm}
         fields={fieldsForCompleteModal()}
+      />
+
+      {/* ---------- Edit Request Modals ---------- */}
+      {/* 3D Print Edit */}
+      <Print3DRequestFormModal
+        mode="edit"
+        open={editOpen && editProjectType === "PRINT3D"}
+        onClose={closeEditModal}
+        onSubmit={submitEditModal}
+        saving={editSaving}
+        saveLabel="Save Changes"
+        submitDisabled={false}
+        values={editPrint3DForm}
+        setValues={setEditPrint3DForm}
+        errors={{}}
+        existingFileName={editTargetRow?.projectFileName}
+        onDownloadFile={() => {
+          // TODO: wire up download later
+          console.log("download file", editTargetRow);
+        }}
+      />
+
+      {/* PCB Mill Edit */}
+      <PcbMillRequestFormModal
+        mode="edit"
+        open={editOpen && editProjectType === "PCB"}
+        onClose={closeEditModal}
+        onSubmit={submitEditModal}
+        saving={editSaving}
+        saveLabel="Save Changes"
+        submitDisabled={false}
+        values={editPcbForm}
+        setValues={setEditPcbForm}
+        errors={{}}
+        ratePerIn2Text="" // placeholder for now
+        costEstimateText="" // placeholder for now
+        existingFileName={editTargetRow?.projectFileName}
+        onDownloadFile={() => {
+          // TODO: wire up download later
+          console.log("download file", editTargetRow);
+        }}
+      />
+
+      {/* Laser Cut Edit */}
+      <LaserCutRequestFormModal
+        mode="edit"
+        open={editOpen && editProjectType === "LASER"}
+        onClose={closeEditModal}
+        onSubmit={submitEditModal}
+        saving={editSaving}
+        saveLabel="Save Changes"
+        submitDisabled={false}
+        values={editLaserForm}
+        setValues={setEditLaserForm}
+        errors={{}}
+        existingFileName={editTargetRow?.projectFileName}
+        onDownloadFile={() => {
+          // TODO: wire up download later
+          console.log("download file", editTargetRow);
+        }}
       />
 
       {/* Change Status Modal */}

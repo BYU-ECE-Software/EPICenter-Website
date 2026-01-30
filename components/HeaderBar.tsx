@@ -70,7 +70,7 @@ const HeaderBar: React.FC = () => {
                 className="h-10 w-auto"
               />
             </a>
-            <h1 className="text-2xl">Experiential Learning Center</h1>
+            <h1 className="text-2xl">EPICenter</h1>
           </div>
 
           {/* Right side: static label + mobile hamburger */}

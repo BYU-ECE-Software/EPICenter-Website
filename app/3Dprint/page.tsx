@@ -33,6 +33,8 @@ export default function PrintPage() {
       customerEmail: "sam@byu.edu",
       requestedAt: "2026-01-25",
       updatedAt: "2026-01-25",
+      comments: "Please prioritize if possible.",
+      projectFileName: "pcb_design_v3.gbr",
     },
     {
       id: 2,
@@ -58,6 +60,8 @@ export default function PrintPage() {
       customerEmail: "jamie@byu.edu",
       requestedAt: "2026-01-23",
       updatedAt: "2026-01-26",
+      projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
     {
       id: 4,
@@ -69,6 +73,8 @@ export default function PrintPage() {
       customerEmail: "avery@byu.edu",
       requestedAt: "2026-01-21",
       updatedAt: "2026-01-26",
+      projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
     {
       id: 5,
@@ -80,6 +86,8 @@ export default function PrintPage() {
       customerEmail: "chris@byu.edu",
       requestedAt: "2026-01-20",
       updatedAt: "2026-01-22",
+      projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
     {
       id: 6,
@@ -91,6 +99,8 @@ export default function PrintPage() {
       customerEmail: "pat@byu.edu",
       requestedAt: "2026-01-19",
       updatedAt: "2026-01-19",
+      projectFileName: "pcb_design_v3.gbr",
+      comments: "Please prioritize if possible.",
     },
   ];
   return (

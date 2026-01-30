@@ -3,7 +3,7 @@
 // In containers: we use `npx prisma migrate deploy` at runtime
 
 generator client {
-    provider = "prisma-client-js"
+    provider      = "prisma-client-js"
     binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -15,10 +15,11 @@ datasource db {
 // ========== Enums ==========
 
 enum OrderStatus {
-    PENDING
-    PROCESSING
+    UNFULFILLED
+    ASSIGNED
+    IN_PROGRESS
     READY_FOR_PICKUP
-    COMPLETED
+    FINISHED
     CANCELLED
 }
 
@@ -42,14 +43,14 @@ enum LoanStatus {
 // =====================
 
 model User {
-    id        Int        @id @default(autoincrement())
-    email     String     @unique
+    id        Int      @id @default(autoincrement())
+    email     String   @unique
     name      String?
-    netID     String?    @unique
-    byuID     String?    @unique
-    createdAt DateTime   @default(now())
-    updatedAt DateTime   @updatedAt
-    
+    netID     String?  @unique
+    byuID     String?  @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
     // Relations
     orders    Order[]
     purchases Purchase[]
@@ -59,24 +60,25 @@ model User {
     @@index([netID])
 }
 
-
 // =====================
 //      MODEL: Order
 // =====================
 
 model Order {
-    id            Int         @id @default(autoincrement())
-    userId        Int
-    item          String
-    priceCents    Int
-    orderTypeId   Int
-    status        OrderStatus @default(PENDING)
-    createdAt     DateTime    @default(now())
-    updatedAt     DateTime    @updatedAt
-    
+    id          Int         @id @default(autoincrement())
+    userId      Int?
+    groupId     Int?
+    item        String
+    priceCents  Int
+    orderTypeId Int
+    status      OrderStatus @default(UNFULFILLED)
+    createdAt   DateTime    @default(now())
+    updatedAt   DateTime    @updatedAt
+
     // Relations
-    user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-    orderType     OrderType   @relation(fields: [orderTypeId], references: [id])
+    user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    purchasingGroup PurchasingGroup? @relation(fields: [groupId], references: [id])
+    orderType OrderType @relation(fields: [orderTypeId], references: [id])
 
     @@index([userId])
     @@index([orderTypeId])
@@ -93,9 +95,9 @@ model OrderType {
     description String?
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
-    
+
     // Relations
-    orders      Order[]
+    orders Order[]
 }
 
 // =====================
@@ -111,9 +113,9 @@ model Item {
     location    String?
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
-    
+
     // Relations
-    purchases   Purchase[]
+    purchases Purchase[]
 
     @@index([name])
 }
@@ -123,22 +125,20 @@ model Item {
 // =====================
 
 model Purchase {
-    id                 Int              @id @default(autoincrement())
-    userId             Int
-    itemId             Int
-    purchasingGroupId  Int?
-    quantity           Int              @default(1)
-    totalCents         Int
-    createdAt          DateTime         @default(now())
-    updatedAt          DateTime         @updatedAt
-    
+    id                Int      @id @default(autoincrement())
+    userId            Int?
+    items             Item[]
+    purchasingGroupId Int?
+    quantity          Int      @default(1)
+    totalCents        Int
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
+
     // Relations
-    user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-    item               Item             @relation(fields: [itemId], references: [id])
-    purchasingGroup    PurchasingGroup? @relation(fields: [purchasingGroupId], references: [id])
+    user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+    purchasingGroup PurchasingGroup? @relation(fields: [purchasingGroupId], references: [id])
 
     @@index([userId])
-    @@index([itemId])
     @@index([purchasingGroupId])
 }
 
@@ -147,14 +147,16 @@ model Purchase {
 // =====================
 
 model PurchasingGroup {
-    id          Int        @id @default(autoincrement())
-    name        String
-    description String?
-    createdAt   DateTime   @default(now())
-    updatedAt   DateTime   @updatedAt
-    
+    id         Int      @id @default(autoincrement())
+    name       String
+    supervisor String?
+    workTag    String
+    comments   String?
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
     // Relations
-    purchases   Purchase[]
+    purchases Purchase[]
 }
 
 // =====================
@@ -168,16 +170,16 @@ model Equipment {
     location     String?
     pictureURL   String?
     status       EquipmentStatus @default(AVAILABLE)
+    comments     String?
     createdAt    DateTime        @default(now())
     updatedAt    DateTime        @updatedAt
-    
+
     // Relations
-    loans        Loan[]
+    loans Loan[]
 
     @@index([serialNumber])
     @@index([status])
 }
-
 
 // =====================
 //   MODEL: Loan
@@ -185,19 +187,22 @@ model Equipment {
 
 model Loan {
     id          Int        @id @default(autoincrement())
-    userId      Int
+    userId      Int?
+    groupId     Int?
     equipmentId Int
     loanDate    DateTime   @default(now())
     returnDate  DateTime?
     status      LoanStatus @default(ONGOING)
     createdAt   DateTime   @default(now())
     updatedAt   DateTime   @updatedAt
-    
+
     // Relations
-    user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-    equipment   Equipment  @relation(fields: [equipmentId], references: [id])
+    user      User?            @relation(fields: [userId], references: [id])
+    equipment Equipment        @relation(fields: [equipmentId], references: [id])
+    group     PurchasingGroup? @relation(fields: [groupId], references: [id])
 
     @@index([userId])
     @@index([equipmentId])
     @@index([status])
+    @@index([groupId])
 }

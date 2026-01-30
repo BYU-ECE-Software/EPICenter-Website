@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, serialNumber, location, pictureURL, status } = body;
+    const { name, serialNumber, location, pictureURL, status, comments } = body;
 
     const equipment = await prisma.equipment.create({
       data: {
@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
         location,
         pictureURL,
         status,
+        comments
       },
     });
 

@@ -1,28 +1,28 @@
 services:
-  migrate:
+  db-migrate:
     build:
       context: .
       target: migrator
-    env_file:
-      - .env
+    env_file: [.env]
     depends_on:
-      db:
-        condition: service_healthy
+      db: {condition: service_healthy}
     restart: "no"
-    networks:
-      - epicenter_network
+    command: npx prisma migrate deploy
+    networks: [epicenter_network]
     # Run once before app (for example: docker compose run --rm migrate)
     # or add a tiny wrapper if you want it to run every 'up' via restart: "no"
 
   app:
-    build: .
+    build:
+      context: .
+      target: runner
     container_name: epicenter_app
     env_file:
       - .env
     depends_on:
       db:
         condition: service_healthy
-      migrate:
+      db-migrate:
         condition: service_completed_successfully
       createbuckets:
         condition: service_completed_successfully
@@ -32,10 +32,10 @@ services:
           "CMD-SHELL",
           "curl -fsS http://localhost:3000/api/health >/dev/null || exit 1",
         ]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
     networks:
       - epicenter_network
@@ -47,7 +47,7 @@ services:
     container_name: epicenter_nginx
     depends_on:
       app:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost/healthy | grep -q OK"]

@@ -372,6 +372,70 @@ export default function ProjectWorkflow({
     ];
   };
 
+  // -------- Change Status Modal Code (FormModal) --------
+
+  // Workflow stages that are allowed for manual status changes
+  // (Canceled has its own dedicated workflow and modal)
+  type NonCanceledStage = Exclude<WorkflowStage, "CANCELED">;
+
+  // List of selectable workflow stages for the dropdown,
+  // excluding "CANCELED"
+  const NON_CANCELED_STAGES: { key: NonCanceledStage; label: string }[] =
+    WORKFLOW_STAGES.filter((s) => s.key !== "CANCELED") as {
+      key: NonCanceledStage;
+      label: string;
+    }[];
+
+  // Change Status modal state
+  const [changeStatusOpen, setChangeStatusOpen] = useState(false);
+  const [changeStatusSaving, setChangeStatusSaving] = useState(false);
+  const [changeStatusTargetRow, setChangeStatusTargetRow] = useState<
+    any | null
+  >(null);
+
+  // Form values for the Change Status modal
+  const [changeStatusForm, setChangeStatusForm] = useState<{
+    status: NonCanceledStage | "";
+  }>({ status: "" });
+
+  // Open Change Status modal
+  const openChangeStatusModal = (row: any) => {
+    setChangeStatusTargetRow(row);
+
+    // Default to the current status if it is not "CANCELED";
+    // otherwise require the user to select a new status
+    const current = row?.status as WorkflowStage | undefined;
+    setChangeStatusForm({
+      status:
+        current && current !== "CANCELED" ? (current as NonCanceledStage) : "",
+    });
+
+    setChangeStatusOpen(true);
+  };
+
+  // Close Change Status modal and reset state
+  const closeChangeStatusModal = () => {
+    setChangeStatusOpen(false);
+    setChangeStatusTargetRow(null);
+    setChangeStatusForm({ status: "" });
+  };
+
+  // Submit Change Status modal (manual override)
+  const submitChangeStatusModal = async () => {
+    console.log("manual change status", {
+      row: changeStatusTargetRow,
+      newStatus: changeStatusForm.status,
+    });
+
+    setChangeStatusSaving(true);
+    try {
+      // later: call backend to manually update workflow status
+      closeChangeStatusModal();
+    } finally {
+      setChangeStatusSaving(false);
+    }
+  };
+
   // -------- Cancel Project Modal Code --------
 
   // state
@@ -432,10 +496,6 @@ export default function ProjectWorkflow({
   // TEMP handlers (we’ll replace with real modal openers later)
   const handleEdit = (row: any) => {
     console.log("edit", row, "stage:", activeStage);
-  };
-
-  const handleChangeStatus = (row: any) => {
-    console.log("change status", row, "stage:", activeStage);
   };
 
   // Left-most workflow action column (only for non-finished/non-canceled)
@@ -529,7 +589,7 @@ export default function ProjectWorkflow({
           row={row}
           activeStage={activeStage}
           onEdit={handleEdit}
-          onChangeStatus={handleChangeStatus}
+          onChangeStatus={openChangeStatusModal}
           onCancel={openCancelModal}
         />
       ),
@@ -734,6 +794,58 @@ export default function ProjectWorkflow({
         values={completeForm}
         setValues={setCompleteForm}
         fields={fieldsForCompleteModal()}
+      />
+
+      {/* Change Status Modal */}
+      <FormModal
+        open={changeStatusOpen}
+        onClose={closeChangeStatusModal}
+        onSubmit={submitChangeStatusModal}
+        title={
+          changeStatusTargetRow
+            ? `Change status for ${changeStatusTargetRow.customerName}'s ${
+                PROJECT_TYPE_LABEL[
+                  changeStatusTargetRow.projectType as ProjectType
+                ] ?? changeStatusTargetRow.projectType
+              } Project`
+            : "Change status"
+        }
+        size="sm"
+        saving={changeStatusSaving}
+        saveLabel="Change Status"
+        submitDisabled={changeStatusSaving || !changeStatusForm.status}
+        values={changeStatusForm}
+        setValues={setChangeStatusForm}
+        fields={[
+          {
+            kind: "custom",
+            key: "manualStatusWarning",
+            colSpan: 2,
+            render: () => (
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-yellow-900">
+                <div className="text-sm font-semibold">
+                  Manual status change
+                </div>
+                <div className="mt-1 text-xs leading-5 text-yellow-900/90">
+                  This will manually update the workflow status and may skip
+                  required steps for proper tracking. Use only when needed.
+                </div>
+              </div>
+            ),
+          },
+          {
+            kind: "select",
+            key: "status",
+            label: "New Status",
+            required: true,
+            colSpan: 2,
+            placeholder: "Select a status",
+            options: NON_CANCELED_STAGES.map((s) => ({
+              value: s.key,
+              label: s.label,
+            })),
+          },
+        ]}
       />
 
       {/* Cancel Project Modal */}

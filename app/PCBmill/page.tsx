@@ -70,6 +70,7 @@ export default function PCBMillPage() {
     },
     {
       id: 3,
+      projectType: "PCB",
       status: "IN_PROGRESS",
       assignedTo: "M. Alvarez",
       quantity: 3,

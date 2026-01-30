@@ -14,7 +14,7 @@ import {
 } from "react-icons/fi";
 import RowActionMenu from "./RowActionMenu";
 import Pagination from "@/components/Pagination";
-import FormModal from "@/components/FormModal";
+import FormModal, { FormModalField } from "@/components/FormModal";
 import { fetchUsers } from "@/lib/api/usersApi";
 import { User } from "@/types/user";
 import ConfirmModal from "./ConfirmModal";
@@ -83,7 +83,7 @@ const START_JOB_DETAILS: Record<string, DetailRow[]> = {
         <div className="space-y-0.5">
           <div>{r.silkscreen ? "Silkscreen" : "No Silkscreen"}</div>
 
-          {r.rubout ? <div>Rubout</div> : null}
+          {r.rubout ? "Rubout" : "No Rubout"}
         </div>
       ),
     },
@@ -273,6 +273,90 @@ export default function ProjectWorkflow({
     }
   };
 
+  // -------- Complete Job Modal Code --------
+
+  // state
+  const [completeOpen, setCompleteOpen] = useState(false);
+  const [completeSaving, setCompleteSaving] = useState(false);
+  const [completeTargetRow, setCompleteTargetRow] = useState<any | null>(null);
+
+  // different fields per project type
+  const [completeForm, setCompleteForm] = useState({
+    price: "", // LASER
+    totalGrams: "", // PRINT3D
+    boardArea: "", // PCB
+  });
+
+  // open Complete Job Modal
+  const openCompleteModal = (row: any) => {
+    setCompleteTargetRow(row);
+    setCompleteForm({ price: "", totalGrams: "", boardArea: "" });
+    setCompleteOpen(true);
+  };
+
+  // close Complete Job Modal
+  const closeCompleteModal = () => {
+    setCompleteOpen(false);
+    setCompleteTargetRow(null);
+  };
+
+  // Submit Complete Job Modal
+  const submitCompleteModal = async () => {
+    console.log("complete job", {
+      row: completeTargetRow,
+      values: completeForm,
+    });
+
+    setCompleteSaving(true);
+    try {
+      // later: call backend to mark as complete
+      closeCompleteModal();
+    } finally {
+      setCompleteSaving(false);
+    }
+  };
+
+  // Different Fields in the Mark Ready for Pickup (Complete) Modal depending on project type
+  const fieldsForCompleteModal = (): FormModalField[] => {
+    if (completeTargetRow?.projectType === "PCB") {
+      return [
+        {
+          kind: "input",
+          key: "boardArea",
+          label: "Board Area",
+          type: "number",
+          required: true,
+          colSpan: 1,
+          adornment: { text: "in²", position: "end" },
+        },
+      ];
+    }
+    if (completeTargetRow?.projectType === "PRINT3D") {
+      return [
+        {
+          kind: "input",
+          key: "totalGrams",
+          label: "Total Grams",
+          type: "number",
+          required: true,
+          colSpan: 1,
+          adornment: { text: "g", position: "end" },
+        },
+      ];
+    }
+    return [
+      {
+        kind: "input",
+        key: "price",
+        label: "Price",
+        type: "number",
+        required: true,
+        colSpan: 1,
+        adornment: { text: "$", position: "start" },
+      },
+    ];
+  };
+
   // Pagination state (placeholder for now)
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -341,7 +425,7 @@ export default function ProjectWorkflow({
               title="Mark Ready for Pickup"
               label="Mark ready for pickup"
               icon={<FiCheckCircle className="h-4 w-4" />}
-              onClick={() => handleStageAdvance(row)}
+              onClick={() => openCompleteModal(row)}
             />
           );
         }
@@ -575,6 +659,28 @@ export default function ProjectWorkflow({
         closeOnBackdrop={true}
         onCancel={closeStartModal}
         onConfirm={submitStartModal}
+      />
+
+      {/* Ready for Pickup/Complete Job Modal */}
+      <FormModal
+        open={completeOpen}
+        onClose={closeCompleteModal}
+        onSubmit={submitCompleteModal}
+        title={`Mark ${completeTargetRow?.customerName ?? "this request"}'s project as "Ready for Pickup"`}
+        size="sm"
+        saving={completeSaving}
+        saveLabel="Complete"
+        submitDisabled={
+          completeSaving ||
+          (completeTargetRow?.projectType === "PCB" &&
+            !completeForm.boardArea) ||
+          (completeTargetRow?.projectType === "PRINT3D" &&
+            !completeForm.totalGrams) ||
+          (completeTargetRow?.projectType === "LASER" && !completeForm.price)
+        }
+        values={completeForm}
+        setValues={setCompleteForm}
+        fields={fieldsForCompleteModal()}
       />
     </section>
   );

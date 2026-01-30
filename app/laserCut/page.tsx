@@ -39,6 +39,7 @@ export default function LaserCutPage() {
     },
     {
       id: 3,
+      projectType: "LASER",
       status: "IN_PROGRESS",
       assignedTo: "M. Alvarez",
       customerName: "Jamie Jay",

@@ -49,6 +49,7 @@ export default function PrintPage() {
     },
     {
       id: 3,
+      projectType: "PRINT3D",
       status: "IN_PROGRESS",
       assignedTo: "M. Alvarez",
       quantity: 3,

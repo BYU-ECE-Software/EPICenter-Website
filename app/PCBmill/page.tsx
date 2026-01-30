@@ -40,6 +40,7 @@ export default function PCBMillPage() {
   const data = [
     {
       id: 1,
+      projectType: "PCB",
       status: "UNFULFILLED",
       assignedTo: null,
       quantity: 2,
@@ -84,6 +85,7 @@ export default function PCBMillPage() {
     },
     {
       id: 4,
+      projectType: "PCB",
       status: "READY_FOR_PICKUP",
       assignedTo: "Dr. Jensen",
       quantity: 1,
@@ -97,6 +99,7 @@ export default function PCBMillPage() {
     },
     {
       id: 5,
+      projectType: "PCB",
       status: "FINISHED",
       assignedTo: "S. Kim",
       quantity: 2,
@@ -110,6 +113,7 @@ export default function PCBMillPage() {
     },
     {
       id: 6,
+      projectType: "PCB",
       status: "CANCELED",
       assignedTo: "Lara",
       quantity: 1,

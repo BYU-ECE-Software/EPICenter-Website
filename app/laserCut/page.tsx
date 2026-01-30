@@ -19,6 +19,7 @@ export default function LaserCutPage() {
   const data = [
     {
       id: 1,
+      projectType: "LASER",
       status: "UNFULFILLED",
       assignedTo: null,
       customerName: "Sam Student",
@@ -49,6 +50,7 @@ export default function LaserCutPage() {
     },
     {
       id: 4,
+      projectType: "LASER",
       status: "READY_FOR_PICKUP",
       assignedTo: "Dr. Jensen",
       customerName: "Avery A.",
@@ -58,6 +60,7 @@ export default function LaserCutPage() {
     },
     {
       id: 5,
+      projectType: "LASER",
       status: "FINISHED",
       assignedTo: "S. Kim",
       customerName: "Chris C.",
@@ -67,6 +70,7 @@ export default function LaserCutPage() {
     },
     {
       id: 6,
+      projectType: "LASER",
       status: "CANCELED",
       assignedTo: "Lara",
       customerName: "Pat P.",

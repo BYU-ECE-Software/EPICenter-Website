@@ -25,6 +25,7 @@ export default function PrintPage() {
   const data = [
     {
       id: 1,
+      projectType: "PRINT3D",
       status: "UNFULFILLED",
       assignedTo: null,
       quantity: 2,
@@ -61,6 +62,7 @@ export default function PrintPage() {
     {
       id: 4,
       status: "READY_FOR_PICKUP",
+      projectType: "PRINT3D",
       assignedTo: "Dr. Jensen",
       quantity: 1,
       customerName: "Avery A.",
@@ -71,6 +73,7 @@ export default function PrintPage() {
     {
       id: 5,
       status: "FINISHED",
+      projectType: "PRINT3D",
       assignedTo: "S. Kim",
       quantity: 2,
       customerName: "Chris C.",
@@ -81,6 +84,7 @@ export default function PrintPage() {
     {
       id: 6,
       status: "CANCELED",
+      projectType: "PRINT3D",
       assignedTo: "Lara",
       quantity: 1,
       customerName: "Pat P.",

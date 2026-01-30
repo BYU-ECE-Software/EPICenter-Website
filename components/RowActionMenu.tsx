@@ -146,7 +146,7 @@ export default function RowActionMenu({
               );
             })}
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

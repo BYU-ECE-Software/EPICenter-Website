@@ -123,15 +123,19 @@ function StageActionButton({
 // Action dropdown (3 dots) that goes in the last column of the DataTable
 function RowActions({
   row,
+  activeStage,
   onEdit,
   onChangeStatus,
   onCancel,
 }: {
   row: any;
+  activeStage: WorkflowStage;
   onEdit: (row: any) => void;
   onChangeStatus: (row: any) => void;
   onCancel: (row: any) => void;
 }) {
+  const canCancel = activeStage !== "FINISHED" && activeStage !== "CANCELED";
+
   return (
     <div className="flex items-center justify-end">
       <RowActionMenu
@@ -147,12 +151,16 @@ function RowActions({
             icon: <FiShuffle className="h-4 w-4" />,
             onClick: () => onChangeStatus(row),
           },
-          {
-            label: "Cancel Request",
-            icon: <FiXCircle className="h-4 w-4" />,
-            variant: "danger",
-            onClick: () => onCancel(row),
-          },
+          ...(canCancel
+            ? [
+                {
+                  label: "Cancel Request",
+                  icon: <FiXCircle className="h-4 w-4" />,
+                  variant: "danger" as const,
+                  onClick: () => onCancel(row),
+                },
+              ]
+            : []),
         ]}
       />
     </div>
@@ -164,6 +172,13 @@ export default function ProjectWorkflow({
   data,
 }: ProjectWorkflowProps) {
   const [activeStage, setActiveStage] = useState<WorkflowStage>("UNFULFILLED");
+
+  // User-friendly Words to match Backend Project Type
+  const PROJECT_TYPE_LABEL: Record<ProjectType, string> = {
+    LASER: "Laser Cut",
+    PRINT3D: "3D Print",
+    PCB: "PCB Mill",
+  };
 
   // -------- Assign Job Modal Code --------
 
@@ -357,6 +372,47 @@ export default function ProjectWorkflow({
     ];
   };
 
+  // -------- Cancel Project Modal Code --------
+
+  // state
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelSaving, setCancelSaving] = useState(false);
+  const [cancelTargetRow, setCancelTargetRow] = useState<any | null>(null);
+
+  const [cancelForm, setCancelForm] = useState({
+    cancelReason: "",
+  });
+
+  // open Cancel modal
+  const openCancelModal = (row: any) => {
+    setCancelTargetRow(row);
+    setCancelForm({ cancelReason: "" });
+    setCancelOpen(true);
+  };
+
+  // close Cancel modal
+  const closeCancelModal = () => {
+    setCancelOpen(false);
+    setCancelTargetRow(null);
+  };
+
+  // submit cancel (no backend yet)
+  const submitCancelModal = async () => {
+    console.log("cancel project", {
+      row: cancelTargetRow,
+      reason: cancelForm.cancelReason,
+      // later: email requester
+    });
+
+    setCancelSaving(true);
+    try {
+      // later: call backend to cancel + send email
+      closeCancelModal();
+    } finally {
+      setCancelSaving(false);
+    }
+  };
+
   // Pagination state (placeholder for now)
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -380,10 +436,6 @@ export default function ProjectWorkflow({
 
   const handleChangeStatus = (row: any) => {
     console.log("change status", row, "stage:", activeStage);
-  };
-
-  const handleCancel = (row: any) => {
-    console.log("cancel", row, "stage:", activeStage);
   };
 
   // Left-most workflow action column (only for non-finished/non-canceled)
@@ -475,9 +527,10 @@ export default function ProjectWorkflow({
       render: (row: any) => (
         <RowActions
           row={row}
+          activeStage={activeStage}
           onEdit={handleEdit}
           onChangeStatus={handleChangeStatus}
-          onCancel={handleCancel}
+          onCancel={openCancelModal}
         />
       ),
     }),
@@ -681,6 +734,37 @@ export default function ProjectWorkflow({
         values={completeForm}
         setValues={setCompleteForm}
         fields={fieldsForCompleteModal()}
+      />
+
+      {/* Cancel Project Modal */}
+      <FormModal
+        open={cancelOpen}
+        onClose={closeCancelModal}
+        onSubmit={submitCancelModal}
+        title="Cancel Project?"
+        size="sm"
+        saving={cancelSaving}
+        saveLabel="Cancel Project and Email Requester"
+        submitDisabled={cancelSaving || !cancelForm.cancelReason.trim()}
+        values={cancelForm}
+        setValues={setCancelForm}
+        fields={[
+          {
+            kind: "input",
+            key: "cancelReason",
+            label: cancelTargetRow
+              ? `Explain why ${cancelTargetRow.customerName}'s ${
+                  PROJECT_TYPE_LABEL[
+                    cancelTargetRow.projectType as ProjectType
+                  ] ?? cancelTargetRow.projectType
+                } project has been canceled`
+              : "Explain why this project has been canceled",
+            type: "textarea",
+            required: true,
+            colSpan: 2,
+            placeholder: "Explanation will be sent to the requester…",
+          },
+        ]}
       />
     </section>
   );

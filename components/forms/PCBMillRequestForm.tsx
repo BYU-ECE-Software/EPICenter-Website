@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import FormModal from "@/components/FormModal";
 import type { FormModalField } from "@/components/FormModal";
+import { validatePositiveInt } from "@/lib/utils/validation";
+import { fetchUsers } from "@/lib/api/usersApi";
+import type { User } from "@/types/user";
 
 export type PcbMillFormValues = {
   requestName: string;
@@ -14,6 +18,8 @@ export type PcbMillFormValues = {
   silkscreen: "no" | "yes";
   boardArea: string;
   rubout: "no" | "yes";
+
+  assignedToUserId: string;
 
   comments: string;
   technicianNotes: string;
@@ -37,10 +43,6 @@ type Props = {
   submitDisabled?: boolean;
   errors?: Record<string, string>;
 
-  // Parent supplies the computed estimate
-  ratePerIn2Text: string;
-  costEstimateText: string;
-
   // Optional copy overrides
   title?: string;
   saveLabel?: string;
@@ -61,8 +63,6 @@ export default function PcbMillRequestFormModal({
   saving = false,
   submitDisabled,
   errors,
-  ratePerIn2Text,
-  costEstimateText,
   title,
   saveLabel,
   size = "lg",
@@ -71,6 +71,48 @@ export default function PcbMillRequestFormModal({
 }: Props) {
   // Gap spacing used in option labels
   const gap = "\u2007\u2007\u2007\u2007\u2007";
+
+  // calculations for cost estimate
+  const pcbQty = validatePositiveInt(values.boardQuantity);
+  const pcbArea = validatePositiveInt(values.boardArea);
+
+  const sidingRate = values.pcbSiding === "double" ? 0.8 : 0.4;
+  const silkscreenRate =
+    values.pcbSiding === "single" && values.silkscreen === "yes" ? 0.2 : 0;
+  const ruboutRate = values.rubout === "yes" ? 0.1 : 0;
+
+  const ratePerIn2 = sidingRate + silkscreenRate + ruboutRate;
+
+  const costEstimate =
+    pcbQty.isValid && pcbArea.isValid
+      ? ratePerIn2 * pcbQty.num * pcbArea.num
+      : 0;
+
+  const ratePerIn2Text = `$${ratePerIn2.toFixed(2)}/in²`;
+  const costEstimateText =
+    pcbQty.isValid && pcbArea.isValid ? `$${costEstimate.toFixed(2)}` : "";
+
+  // Users for Assign dropdown
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+
+  // Load technicians when this modal opens (EDIT ONLY)
+  useEffect(() => {
+    if (mode !== "edit") return;
+    if (!open) return;
+
+    // Only fetch once per session
+    if (users.length) return;
+
+    setUsersLoading(true);
+    setUsersError(null);
+
+    fetchUsers()
+      .then((data) => setUsers(data))
+      .catch((e) => setUsersError(e.message ?? "Failed to load users"))
+      .finally(() => setUsersLoading(false));
+  }, [mode, open, users.length]);
 
   const fields: FormModalField[] = [
     {
@@ -281,6 +323,43 @@ export default function PcbMillRequestFormModal({
         </div>
       ),
     },
+
+    // Assign technician (EDIT MODE ONLY)
+    ...(mode === "edit"
+      ? ([
+          {
+            kind: "select",
+            key: "assignedToUserId",
+            label: "Assigned Technician",
+            colSpan: 2,
+            placeholder: usersLoading
+              ? "Loading technicians..."
+              : "Select a technician",
+            options: users
+              .slice()
+              .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
+              .map((u) => ({
+                value: String(u.id),
+                label: u.name ?? u.email,
+              })),
+          },
+          // show an error message if users failed to load
+          ...(usersError
+            ? ([
+                {
+                  kind: "custom",
+                  key: "assignedUserError",
+                  colSpan: 2,
+                  render: () => (
+                    <p className="text-xs text-red-600 text-left -mt-2">
+                      {usersError}
+                    </p>
+                  ),
+                },
+              ] as FormModalField[])
+            : []),
+        ] as FormModalField[])
+      : []),
 
     // Comments (create = editable requestor comments, edit = read-only requestor + editable tech notes)
     {

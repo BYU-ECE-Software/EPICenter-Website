@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import FormModal from "@/components/FormModal";
 import type { FormModalField } from "@/components/FormModal";
+import { fetchUsers } from "@/lib/api/usersApi";
+import type { User } from "@/types/user";
 
 /** Shape for the Laser Cut form values */
 export type LaserCutFormValues = {
@@ -14,6 +17,8 @@ export type LaserCutFormValues = {
 
   confirmedCalendar: boolean;
   confirmedResponsibility: boolean;
+
+  assignedToUserId: string;
 
   comments: string;
   technicianNotes: string;
@@ -62,6 +67,28 @@ export default function LaserCutRequestFormModal({
   existingFileName,
   onDownloadFile,
 }: Props) {
+  // Users for Assign dropdown
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+
+  // Load technicians when this modal opens (EDIT ONLY)
+  useEffect(() => {
+    if (mode !== "edit") return;
+    if (!open) return;
+
+    // Only fetch once per session
+    if (users.length) return;
+
+    setUsersLoading(true);
+    setUsersError(null);
+
+    fetchUsers()
+      .then((data) => setUsers(data))
+      .catch((e) => setUsersError(e.message ?? "Failed to load users"))
+      .finally(() => setUsersLoading(false));
+  }, [mode, open, users.length]);
+
   // Fields passed into FormModal
   const fields: FormModalField[] = [
     {
@@ -157,146 +184,195 @@ export default function LaserCutRequestFormModal({
       kind: "custom",
       key: "processAndCalendar",
       colSpan: 2,
-      render: () => (
-        <div className="text-left mt-2">
-          <label className="block text-sm font-semibold text-byu-navy mb-2">
-            How the process works
-          </label>
+      render: () => {
+        if (mode === "edit") return null;
 
-          <div className="space-y-5 text-sm text-gray-700">
-            <div>
-              <p className="font-medium text-byu-navy">Process</p>
-              <ul className="list-disc pl-5 mt-1 space-y-1">
-                <li>
-                  Sign up for a time on the{" "}
-                  <a
-                    href={process.env.NEXT_PUBLIC_LASER_SCHEDULE_SHEET_VIEW_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline hover:text-blue-800"
-                  >
-                    Google Sheets
-                  </a>
-                  .
-                </li>
-                <li>
-                  Come meet with a shop tech at the time you signed up and
-                  process your job.
-                </li>
-                <li>You are required to be present during the entire cut.</li>
-                <li>
-                  If you are not able to be present, a shop tech can watch your
-                  job for $20/hour.
-                </li>
-              </ul>
-            </div>
+        return (
+          <div className="text-left mt-2">
+            <label className="block text-sm font-semibold text-byu-navy mb-2">
+              How the process works
+            </label>
 
-            <div>
-              <p className="font-medium text-byu-navy">Material</p>
-              <ul className="list-disc pl-5 mt-1 space-y-1">
-                <li>You are responsible for providing your own material.</li>
-                <li>
-                  There is a limited selection of material in stock that you can
-                  purchase from the EPICenter.
-                </li>
-              </ul>
-            </div>
+            <div className="space-y-5 text-sm text-gray-700">
+              <div>
+                <p className="font-medium text-byu-navy">Process</p>
+                <ul className="list-disc pl-5 mt-1 space-y-1">
+                  <li>
+                    Sign up for a time on the{" "}
+                    <a
+                      href={
+                        process.env.NEXT_PUBLIC_LASER_SCHEDULE_SHEET_VIEW_URL
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline hover:text-blue-800"
+                    >
+                      Google Sheets
+                    </a>
+                    .
+                  </li>
+                  <li>
+                    Come meet with a shop tech at the time you signed up and
+                    process your job.
+                  </li>
+                  <li>You are required to be present during the entire cut.</li>
+                  <li>
+                    If you are not able to be present, a shop tech can watch
+                    your job for $20/hour.
+                  </li>
+                </ul>
+              </div>
 
-            <div>
-              <p className="font-medium text-byu-navy">Disallowed materials</p>
-              <ul className="list-disc pl-5 mt-1 space-y-1">
-                <li>PVC - emits pure chlorine gas</li>
-                <li>ABS - emits cyanide gas</li>
-                <li>HDPE - melts and catches fire</li>
-                <li>PolyStyrene foam - catches fire</li>
-                <li>Polypropylene foam - catches fire</li>
-                <li>Fiberglass - emits fumes</li>
-              </ul>
-              <p className="mt-1 text-xs text-gray-500">
-                *please do not bring in any unidentified material
-              </p>
-            </div>
+              <div>
+                <p className="font-medium text-byu-navy">Material</p>
+                <ul className="list-disc pl-5 mt-1 space-y-1">
+                  <li>You are responsible for providing your own material.</li>
+                  <li>
+                    There is a limited selection of material in stock that you
+                    can purchase from the EPICenter.
+                  </li>
+                </ul>
+              </div>
 
-            <div>
-              <p className="font-medium text-byu-navy">
-                Common and safe materials
-              </p>
-              <ul className="list-disc pl-5 mt-1 space-y-1">
-                <li>Acrylic</li>
-                <li>Most woods (max thickness for cutting = 1/4")</li>
-                <li>Foamboard</li>
-                <li>Cardboard</li>
-                <li>Paper/Cardstock</li>
-                <li>Leather</li>
-                <li>Magnetic sheet</li>
-              </ul>
-            </div>
-
-            <div>
-              <p className="font-medium text-byu-navy">Metal etching</p>
-              <p className="mt-1">
-                Our laser cutter is not powerful enough to cut or etch metal
-              </p>
-            </div>
-
-            <div>
-              <p className="font-medium text-byu-navy">Other considerations</p>
-              <p className="mt-1">
-                We will not process jobs that take over 8 hours. You'll need to
-                divide these jobs into shorter jobs.
-              </p>
-            </div>
-
-            {/* Required checkboxes */}
-            <div className="mt-6 space-y-3">
-              <label className="block text-sm font-semibold text-byu-navy mb-2">
-                Requirements *
-              </label>
-
-              <label className="flex items-start gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={values.confirmedCalendar}
-                  onChange={(e) =>
-                    setValues((p) => ({
-                      ...p,
-                      confirmedCalendar: e.target.checked,
-                    }))
-                  }
-                />
-                <span>I have submitted a time on the scheduling calendar.</span>
-              </label>
-
-              <label className="flex items-start gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={values.confirmedResponsibility}
-                  onChange={(e) =>
-                    setValues((p) => ({
-                      ...p,
-                      confirmedResponsibility: e.target.checked,
-                    }))
-                  }
-                />
-                <span>
-                  I understand that I am responsible for watching my laser cut
-                  the entire time (unless I want to pay a $20/hour fee)
-                </span>
-              </label>
-
-              {(!values.confirmedCalendar ||
-                !values.confirmedResponsibility) && (
-                <p className="text-xs text-gray-500">
-                  Both acknowledgements must be checked before submitting.
+              <div>
+                <p className="font-medium text-byu-navy">
+                  Disallowed materials
                 </p>
-              )}
+                <ul className="list-disc pl-5 mt-1 space-y-1">
+                  <li>PVC - emits pure chlorine gas</li>
+                  <li>ABS - emits cyanide gas</li>
+                  <li>HDPE - melts and catches fire</li>
+                  <li>PolyStyrene foam - catches fire</li>
+                  <li>Polypropylene foam - catches fire</li>
+                  <li>Fiberglass - emits fumes</li>
+                </ul>
+                <p className="mt-1 text-xs text-gray-500">
+                  *please do not bring in any unidentified material
+                </p>
+              </div>
+
+              <div>
+                <p className="font-medium text-byu-navy">
+                  Common and safe materials
+                </p>
+                <ul className="list-disc pl-5 mt-1 space-y-1">
+                  <li>Acrylic</li>
+                  <li>Most woods (max thickness for cutting = 1/4")</li>
+                  <li>Foamboard</li>
+                  <li>Cardboard</li>
+                  <li>Paper/Cardstock</li>
+                  <li>Leather</li>
+                  <li>Magnetic sheet</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-medium text-byu-navy">Metal etching</p>
+                <p className="mt-1">
+                  Our laser cutter is not powerful enough to cut or etch metal
+                </p>
+              </div>
+
+              <div>
+                <p className="font-medium text-byu-navy">
+                  Other considerations
+                </p>
+                <p className="mt-1">
+                  We will not process jobs that take over 8 hours. You'll need
+                  to divide these jobs into shorter jobs.
+                </p>
+              </div>
+
+              {/* Required checkboxes */}
+              <div className="mt-6 space-y-3">
+                <label className="block text-sm font-semibold text-byu-navy mb-2">
+                  Requirements *
+                </label>
+
+                <label className="flex items-start gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={values.confirmedCalendar}
+                    onChange={(e) =>
+                      setValues((p) => ({
+                        ...p,
+                        confirmedCalendar: e.target.checked,
+                      }))
+                    }
+                  />
+                  <span>
+                    I have submitted a time on the scheduling calendar.
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={values.confirmedResponsibility}
+                    onChange={(e) =>
+                      setValues((p) => ({
+                        ...p,
+                        confirmedResponsibility: e.target.checked,
+                      }))
+                    }
+                  />
+                  <span>
+                    I understand that I am responsible for watching my laser cut
+                    the entire time (unless I want to pay a $20/hour fee)
+                  </span>
+                </label>
+
+                {(!values.confirmedCalendar ||
+                  !values.confirmedResponsibility) && (
+                  <p className="text-xs text-gray-500">
+                    Both acknowledgements must be checked before submitting.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
+
+    // Assign technician (EDIT MODE ONLY)
+    ...(mode === "edit"
+      ? ([
+          {
+            kind: "select",
+            key: "assignedToUserId",
+            label: "Assigned Technician",
+            colSpan: 2,
+            placeholder: usersLoading
+              ? "Loading technicians..."
+              : "Select a technician",
+            options: users
+              .slice()
+              .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
+              .map((u) => ({
+                value: String(u.id),
+                label: u.name ?? u.email,
+              })),
+          },
+          // show an error message if users failed to load
+          ...(usersError
+            ? ([
+                {
+                  kind: "custom",
+                  key: "assignedUserError",
+                  colSpan: 2,
+                  render: () => (
+                    <p className="text-xs text-red-600 text-left -mt-2">
+                      {usersError}
+                    </p>
+                  ),
+                },
+              ] as FormModalField[])
+            : []),
+        ] as FormModalField[])
+      : []),
 
     // Comments (create = editable requestor comments, edit = read-only requestor + editable tech notes)
     {

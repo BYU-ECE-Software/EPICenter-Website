@@ -28,6 +28,7 @@ export default function Home() {
     file: null as File | null,
     printQuantity: "1",
     filamentColor: "",
+    assignedToUserId: "",
     comments: "",
     technicianNotes: "",
   });
@@ -42,6 +43,7 @@ export default function Home() {
     silkscreen: "no",
     boardArea: "",
     rubout: "no",
+    assignedToUserId: "",
     comments: "",
     technicianNotes: "",
   });
@@ -53,6 +55,7 @@ export default function Home() {
     file: null as File | null,
     confirmedCalendar: false,
     confirmedResponsibility: false,
+    assignedToUserId: "",
     comments: "",
     technicianNotes: "",
   });
@@ -70,6 +73,7 @@ export default function Home() {
       file: null,
       printQuantity: "1",
       filamentColor: "",
+      assignedToUserId: "",
       comments: "",
       technicianNotes: "",
     });
@@ -132,6 +136,7 @@ export default function Home() {
       silkscreen: "no",
       boardArea: "",
       rubout: "no",
+      assignedToUserId: "",
       comments: "",
       technicianNotes: "",
     });
@@ -224,6 +229,7 @@ export default function Home() {
       file: null,
       confirmedCalendar: false,
       confirmedResponsibility: false,
+      assignedToUserId: "",
       comments: "",
       technicianNotes: "",
     });
@@ -348,8 +354,6 @@ export default function Home() {
           values={pcbForm}
           setValues={setPcbForm}
           errors={pcbErrors}
-          ratePerIn2Text={`$${ratePerIn2.toFixed(2)}/in²`}
-          costEstimateText={costEstimateText}
         />
 
         {/* Laser Cut Request Modal */}

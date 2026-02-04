@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRole } from "@/app/providers/RoleProvider";
 import { FiChevronDown, FiShoppingCart } from "react-icons/fi";
 import { useClickOutside } from "@/lib/hooks/useClickOutside";
+import { useCart } from "@/app/providers/CartProvider";
+import CountBadge from "./CountBadge";
 
 const HeaderBar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -21,6 +23,11 @@ const HeaderBar: React.FC = () => {
   // Project Requests dropdown refs
   const projectRequestsMobileWrapRef = useRef<HTMLDivElement | null>(null);
   const projectRequestsDesktopWrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Compute Count of Items in Cart
+  // This is total quantity, not just unique items. Up for debate?
+  const { items } = useCart();
+  const cartCount = items.reduce((sum, x) => sum + x.qty, 0);
 
   useLayoutEffect(() => {
     const update = () => {
@@ -106,10 +113,16 @@ const HeaderBar: React.FC = () => {
             {isEmployee && (
               <Link
                 href="/cart"
-                className="hidden sm:inline-flex items-center justify-center p-2  focus:outline-none cursor-pointer"
+                className="relative hidden sm:inline-flex items-center justify-center p-2  focus:outline-none cursor-pointer"
                 aria-label="View cart"
               >
                 <FiShoppingCart className="h-6 w-6 text-white" />
+
+                {cartCount > 0 && (
+                  <CountBadge className="absolute -top-1 -right-1 h-5 min-w-[20px] bg-byu-royal text-white">
+                    {cartCount}
+                  </CountBadge>
+                )}
               </Link>
             )}
 

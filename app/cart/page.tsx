@@ -6,7 +6,7 @@ import { useCart } from "@/app/providers/CartProvider";
 import PrimaryButton from "@/components/PrimaryButton";
 import CartRowCard from "@/components/CartRowCard";
 import FormModal from "@/components/FormModal";
-import { FiPlus } from "react-icons/fi";
+import { FiCornerUpLeft, FiPlus } from "react-icons/fi";
 import type { Item } from "@/types/item";
 
 function SummaryRow({
@@ -40,9 +40,6 @@ function SummaryRow({
 
 export default function CartPage() {
   const { items, setQty, removeItem, subtotalCents } = useCart();
-
-  const refundCents = 0;
-  const totalCents = subtotalCents - refundCents;
 
   const inc = (itemId: number, currentQty: number) =>
     setQty(itemId, currentQty + 1);
@@ -103,6 +100,51 @@ export default function CartPage() {
     closeMisc();
   };
 
+  // Refund modal + state
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundForm, setRefundForm] = useState({ amount: "" }); // dollars
+  const [refundCents, setRefundCents] = useState(0);
+
+  // Open Refund Modal
+  const openRefund = () => {
+    // Prefill with existing refund if present
+    setRefundForm({
+      amount: refundCents ? (refundCents / 100).toFixed(2) : "",
+    });
+    setRefundOpen(true);
+  };
+
+  // On Close Refund Modal
+  const closeRefund = () => {
+    setRefundOpen(false);
+    setRefundForm({ amount: "" });
+  };
+
+  // Clear Refund
+  const clearRefund = () => {
+    setRefundCents(0);
+    setRefundForm({ amount: "" });
+    setRefundOpen(false);
+  };
+
+  //Validate Refund Amount
+  const refundAmountNumber = Number(refundForm.amount);
+  const isRefundValid =
+    Number.isFinite(refundAmountNumber) && refundAmountNumber > 0;
+
+  // Add Refund to Checkout Summary. Replace any existing refund with newest one
+  const submitRefund = () => {
+    if (!isRefundValid) return;
+    const cents = Math.round(refundAmountNumber * 100);
+
+    setRefundCents(cents);
+
+    closeRefund();
+  };
+
+  // Calculate Checkout total
+  const totalCents = subtotalCents - refundCents;
+
   return (
     <main className="min-h-[calc(100vh-8rem)] bg-white px-12 py-8">
       <h1 className="text-3xl font-bold text-byu-navy">Cart</h1>
@@ -151,43 +193,63 @@ export default function CartPage() {
 
           {/* RIGHT: summary */}
           <aside className="lg:col-span-3 lg:col-start-9">
-            <div className="sticky top-24 rounded-lg border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-100 px-5 py-4">
-                <div className="text-sm font-semibold text-byu-navy">Total</div>
+            <div className="sticky top-24 space-y-3">
+              {/* Summary card */}
+              <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div className="border-b border-gray-100 px-5 py-4">
+                  <div className="text-sm font-semibold text-byu-navy">
+                    Total
+                  </div>
+                </div>
+
+                <div className="px-5 py-4 space-y-3">
+                  <SummaryRow
+                    label="Sub-total"
+                    value={formatCents(subtotalCents)}
+                  />
+                  <SummaryRow
+                    label="Refunds"
+                    value={refundCents ? `(${formatCents(refundCents)})` : "0"}
+                  />
+
+                  <div className="pt-2 border-t border-gray-100" />
+                  <SummaryRow
+                    label="Total"
+                    value={formatCents(totalCents)}
+                    strong
+                  />
+
+                  <PrimaryButton
+                    label="Check Out"
+                    className="mt-3 w-full justify-center py-2.5 text-sm font-semibold"
+                    disabled={!items.length}
+                    onClick={() => console.log("checkout")}
+                  />
+                </div>
               </div>
 
-              <div className="px-5 py-4 space-y-3">
-                <SummaryRow
-                  label="Sub-total"
-                  value={formatCents(subtotalCents)}
-                />
-                <SummaryRow
-                  label="Refunds"
-                  value={refundCents ? formatCents(refundCents) : "0"}
-                />
-
-                <div className="pt-2 border-t border-gray-100" />
-                <SummaryRow
-                  label="Total"
-                  value={formatCents(totalCents)}
-                  strong
-                />
-
+              {/* Refund button OUTSIDE the card */}
+              <div className="flex justify-end">
                 <PrimaryButton
-                  label="Check Out"
-                  className="mt-3 w-full justify-center py-2.5 text-sm font-semibold"
-                  disabled={!items.length}
-                  onClick={() => console.log("checkout")}
-                />
-
-                <PrimaryButton
-                  label="Issue refund"
-                  className="mt-2 w-full justify-center py-2.5 text-sm font-semibold"
+                  label={refundCents ? "Change refund amount" : "Issue refund"}
+                  icon={<FiCornerUpLeft className="h-4 w-4" />}
+                  className="px-3 py-1.5 text-xs font-medium justify-center w-full"
                   bgClass="bg-white text-byu-royal border border-byu-royal"
                   hoverBgClass="hover:bg-blue-50"
-                  onClick={() => console.log("issue refund")}
+                  onClick={openRefund}
                 />
               </div>
+              {refundCents ? (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={clearRefund}
+                    className="text-xs text-gray-500 hover:text-gray-700 hover:underline self-end"
+                  >
+                    Remove refund
+                  </button>
+                </div>
+              ) : null}
             </div>
           </aside>
         </div>
@@ -198,7 +260,7 @@ export default function CartPage() {
         open={miscOpen}
         onClose={closeMisc}
         onSubmit={submitMisc}
-        title="Add misc purchase"
+        title="Add Misc Item"
         size="sm"
         saving={false}
         saveLabel="Add to Cart"
@@ -226,6 +288,31 @@ export default function CartPage() {
             required: true,
             type: "number",
             placeholder: "1",
+          },
+        ]}
+      />
+
+      {/* Issue Refund Modal */}
+      <FormModal
+        open={refundOpen}
+        onClose={closeRefund}
+        onSubmit={submitRefund}
+        title={refundCents ? "Change refund amount" : "Issue refund"}
+        size="sm"
+        saving={false}
+        saveLabel={refundCents ? "Update" : "Confirm"}
+        submitDisabled={!isRefundValid}
+        values={refundForm}
+        setValues={setRefundForm}
+        fields={[
+          {
+            key: "amount",
+            label: "Amount to refund",
+            required: true,
+            type: "number",
+            placeholder: "0.00",
+            adornment: { text: "$", position: "start" },
+            colSpan: 2,
           },
         ]}
       />

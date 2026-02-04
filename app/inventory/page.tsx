@@ -11,6 +11,7 @@ import RowActionMenu from "@/components/RowActionMenu";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useRole } from "../providers/RoleProvider";
 import Toast, { type ToastType } from "@/components/Toast";
+import { useCart } from "@/app/providers/CartProvider";
 import {
   createItem,
   fetchItems,
@@ -125,6 +126,7 @@ export default function InventoryPage() {
   const [addToCartOpen, setAddToCartOpen] = useState(false);
   const [cartForm, setCartForm] = useState({ qty: "1" });
   const [selectedCartRow, setSelectedCartRow] = useState<any>(null);
+  const { addItem } = useCart();
 
   // Load items for table once on page load
   useEffect(() => {
@@ -164,10 +166,16 @@ export default function InventoryPage() {
   // Submit Add to Cart Modal
   const submitAddToCart = async () => {
     if (!isQtyValid) return;
-    console.log("add to cart submit", {
-      item: selectedCartRow,
-      qty: qtyNumber,
-    });
+    if (!selectedCartRow?.id) return;
+
+    addItem(selectedCartRow as Item, qtyNumber);
+
+    showToast(
+      "success",
+      "Added to cart",
+      `${selectedCartRow.name ?? "Item"} (x${qtyNumber})`,
+    );
+
     closeAddToCart();
   };
 

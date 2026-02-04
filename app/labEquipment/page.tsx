@@ -501,7 +501,7 @@ export default function LabEquipmentPage() {
         title="Loan due date"
         size="sm"
         saving={false}
-        saveLabel="Set due date"
+        saveLabel="Add to Cart"
         submitDisabled={!isLoanValid}
         values={loanForm}
         setValues={setLoanForm}

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import HeaderBar from "@/components/HeaderBar";
 import FooterBar from "@/components/FooterBar";
 import { RoleProvider } from "./providers/RoleProvider";
+import { CartProvider } from "@/app/providers/CartProvider";
 
 export const metadata: Metadata = {
   title: "EPICenter Site",
@@ -32,10 +33,11 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-gray-50 text-gray-900">
         <RoleProvider>
-          {" "}
-          <HeaderBar />
-          <div className="w-full">{children}</div>
-          <FooterBar />
+          <CartProvider>
+            <HeaderBar />
+            <div className="w-full">{children}</div>
+            <FooterBar />
+          </CartProvider>
         </RoleProvider>
       </body>
     </html>

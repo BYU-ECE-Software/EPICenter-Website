@@ -1,0 +1,129 @@
+services:
+  db-migrate:
+    build:
+      context: .
+      target: migrator
+    env_file: [.env]
+    depends_on:
+      db: {condition: service_healthy}
+    restart: "no"
+    command: npx prisma migrate deploy
+    networks: [epicenter_network]
+    # Run once before app (for example: docker compose run --rm migrate)
+    # or add a tiny wrapper if you want it to run every 'up' via restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runner
+    container_name: epicenter_app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+      createbuckets:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:3000/api/health >/dev/null || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - epicenter_network
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: epicenter_nginx
+    depends_on:
+      app:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/healthy | grep -q OK"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - epicenter_network
+
+  db:
+    image: postgres:16
+    container_name: epicenter_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} && psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'SELECT 1'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - epicenter_network
+
+  minio:
+    image: minio/minio
+    container_name: epicenter_minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - epicenter_network
+
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    restart: "no"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    entrypoint: >
+      /bin/sh -c "
+      until /usr/bin/mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD; do
+        echo 'Waiting for MinIO...';
+        sleep 2;
+      done;
+      /usr/bin/mc mb --ignore-existing myminio/item-images;
+      echo 'Bucket ensured: item-images';
+      exit 0;
+      "
+    networks:
+      - epicenter_network
+
+networks:
+  epicenter_network:
+    driver: bridge
+
+volumes:
+  db_data:
+  minio_data:

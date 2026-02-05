@@ -164,7 +164,15 @@ const HeaderBar: React.FC = () => {
                 onClick={() => setMobileOpen(false)}
                 className="px-6 py-4 text-left hover:bg-[#FAFAFA] flex items-center gap-2"
               >
-                <FiShoppingCart className="h-5 w-5 text-byu-navy mr-3" />
+                <span className="relative mr-3">
+                  <FiShoppingCart className="h-5 w-5 text-byu-navy mr-3" />
+
+                  {cartCount > 0 && (
+                    <CountBadge className="pointer-events-none absolute -top-2 -right-1 h-4 min-w-[16px] bg-byu-royal text-white">
+                      {cartCount}
+                    </CountBadge>
+                  )}
+                </span>
                 <span>Cart</span>
               </Link>
             )}

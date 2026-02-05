@@ -17,14 +17,24 @@ type CartContextValue = {
   setQty: (itemId: number, qty: number) => void;
   clearCart: () => void;
   subtotalCents: number;
+  refundCents: number;
+  setRefundCents: (cents: number) => void;
+  clearRefund: () => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
 
 const STORAGE_KEY = "epicenter_cart_v1";
 
+// Persisted shape of a cart
+type PersistedCart = {
+  items: CartItem[];
+  refundCents: number;
+};
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [refundCents, _setRefundCents] = useState<number>(0);
 
   // Load cart once on mount
   useEffect(() => {
@@ -32,7 +42,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as CartItem[];
-      if (Array.isArray(parsed)) setItems(parsed);
+      if (parsed && typeof parsed === "object") {
+        const maybe = parsed as Partial<PersistedCart>;
+        if (Array.isArray(maybe.items)) setItems(maybe.items as CartItem[]);
+        if (typeof maybe.refundCents === "number")
+          _setRefundCents(maybe.refundCents);
+      }
     } catch {
       // ignore bad localStorage
     }
@@ -41,11 +56,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Persist whenever cart changes
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      const payload: PersistedCart = { items, refundCents };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {
       // ignore storage errors
     }
-  }, [items]);
+  }, [items, refundCents]);
 
   const addItem = (item: Item, qty: number = 1) => {
     const safeQty = Number.isInteger(qty) && qty > 0 ? qty : 1;
@@ -83,7 +99,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    setItems([]);
+    _setRefundCents(0);
+  };
+
+  const setRefundCents = (cents: number) => {
+    const safe = Math.max(0, Math.floor(cents || 0));
+    _setRefundCents(safe);
+  };
+
+  const clearRefund = () => _setRefundCents(0);
 
   const subtotalCents = useMemo(
     () => items.reduce((sum, x) => sum + x.priceCents * x.qty, 0),
@@ -97,6 +123,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setQty,
     clearCart,
     subtotalCents,
+    refundCents,
+    setRefundCents,
+    clearRefund,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

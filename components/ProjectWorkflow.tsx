@@ -395,6 +395,7 @@ export default function ProjectWorkflow({
     file: null,
     printQuantity: "1",
     filamentColor: "",
+    assignedToUserId: "",
     comments: "",
     technicianNotes: "",
   });
@@ -409,6 +410,7 @@ export default function ProjectWorkflow({
     silkscreen: "no",
     boardArea: "",
     rubout: "no",
+    assignedToUserId: "",
     comments: "",
     technicianNotes: "",
   });
@@ -420,6 +422,7 @@ export default function ProjectWorkflow({
     file: null,
     confirmedCalendar: false,
     confirmedResponsibility: false,
+    assignedToUserId: "",
     comments: "",
     technicianNotes: "",
   });
@@ -432,6 +435,9 @@ export default function ProjectWorkflow({
       file: null,
       printQuantity: String(row.quantity ?? row.printQuantity ?? "1"),
       filamentColor: row.color ?? row.filamentColor ?? "",
+      assignedToUserId: row.technicianUserId
+        ? String(row.technicianUserId)
+        : "",
       comments: row.comments ?? "",
       technicianNotes: row.technicianNotes ?? "",
     };
@@ -453,6 +459,9 @@ export default function ProjectWorkflow({
         row.silkscreen === true || row.silkscreen === "yes" ? "yes" : "no",
       boardArea: String(row.boardArea ?? ""),
       rubout: row.rubout === true || row.rubout === "yes" ? "yes" : "no",
+      assignedToUserId: row.technicianUserId
+        ? String(row.technicianUserId)
+        : "",
       comments: row.comments ?? "",
       technicianNotes: row.technicianNotes ?? "",
     };
@@ -466,6 +475,9 @@ export default function ProjectWorkflow({
       file: null,
       confirmedCalendar: Boolean(row.confirmedCalendar),
       confirmedResponsibility: Boolean(row.confirmedResponsibility),
+      assignedToUserId: row.technicianUserId
+        ? String(row.technicianUserId)
+        : "",
       comments: row.comments ?? "",
       technicianNotes: row.technicianNotes ?? "",
     };
@@ -971,8 +983,6 @@ export default function ProjectWorkflow({
         values={editPcbForm}
         setValues={setEditPcbForm}
         errors={{}}
-        ratePerIn2Text="" // placeholder for now
-        costEstimateText="" // placeholder for now
         existingFileName={editTargetRow?.projectFileName}
         onDownloadFile={() => {
           // TODO: wire up download later

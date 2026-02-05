@@ -1,13 +1,14 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import BaseModal from "@/components/BaseModal";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 // Modal sizing options passed straight through to BaseModal
 type ModalSize = "sm" | "md" | "lg";
 
 // Supported built-in input types
-type FieldType = "text" | "email" | "number" | "date" | "textarea";
+type FieldType = "text" | "email" | "number" | "date" | "textarea" | "pin";
 
 // Optional adornment (prefix/suffix)
 type Adornment = {
@@ -97,6 +98,13 @@ export default function FormModal<T extends Record<string, any>>({
   const setFieldValue = (key: string, value: any) => {
     setValues({ ...values, [key]: value });
   };
+
+  // Whether to show or hide a pin
+  const [pinVisible, setPinVisible] = useState<Record<string, boolean>>({});
+  const isPinVisible = (key: string) => Boolean(pinVisible[key]);
+  const togglePinVisible = (key: string) =>
+    setPinVisible((p) => ({ ...p, [key]: !p[key] }));
+  const sanitizePin = (raw: string) => raw.replace(/\D/g, "");
 
   return (
     <BaseModal
@@ -192,6 +200,36 @@ export default function FormModal<T extends Record<string, any>>({
                     value={value}
                     onChange={(e) => setFieldValue(field.key, e.target.value)}
                   />
+                </div>
+              ) : field.type === "pin" ? (
+                <div className="relative">
+                  <input
+                    type={isPinVisible(field.key) ? "text" : "password"}
+                    className={INPUT_CLASS + " pr-10"}
+                    placeholder={field.placeholder ?? ""}
+                    value={value}
+                    onChange={(e) =>
+                      setFieldValue(field.key, sanitizePin(e.target.value))
+                    }
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => togglePinVisible(field.key)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700"
+                    aria-label={
+                      isPinVisible(field.key) ? "Hide PIN" : "Show PIN"
+                    }
+                    title={isPinVisible(field.key) ? "Hide" : "Show"}
+                  >
+                    {isPinVisible(field.key) ? (
+                      <FiEyeOff className="h-4 w-4" />
+                    ) : (
+                      <FiEye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               ) : (
                 <div className={hasAdornment ? "relative" : undefined}>

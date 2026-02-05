@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import FormModal from "@/components/FormModal";
 import type { FormModalField } from "@/components/FormModal";
+import { fetchUsers } from "@/lib/api/usersApi";
+import type { User } from "@/types/user";
 
 export type Print3DFormValues = {
   requestName: string;
@@ -10,6 +13,7 @@ export type Print3DFormValues = {
   file: File | null;
   printQuantity: string;
   filamentColor: string;
+  assignedToUserId: string;
   comments: string;
   technicianNotes: string;
 };
@@ -60,6 +64,28 @@ export default function Print3DRequestFormModal({
   existingFileName,
   onDownloadFile,
 }: Props) {
+  // Users for Assign dropdown
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+
+  // Load technicians when this modal opens (EDIT ONLY)
+  useEffect(() => {
+    if (mode !== "edit") return;
+    if (!open) return;
+
+    // Only fetch once per session
+    if (users.length) return;
+
+    setUsersLoading(true);
+    setUsersError(null);
+
+    fetchUsers()
+      .then((data) => setUsers(data))
+      .catch((e) => setUsersError(e.message ?? "Failed to load users"))
+      .finally(() => setUsersLoading(false));
+  }, [mode, open, users.length]);
+
   const fields: FormModalField[] = [
     {
       key: "requestName",
@@ -156,6 +182,43 @@ export default function Print3DRequestFormModal({
       label: "Filament Color (1st choice)",
       required: true,
     },
+
+    // Assign technician (EDIT MODE ONLY)
+    ...(mode === "edit"
+      ? ([
+          {
+            kind: "select",
+            key: "assignedToUserId",
+            label: "Assigned Technician",
+            colSpan: 2,
+            placeholder: usersLoading
+              ? "Loading technicians..."
+              : "Select a technician",
+            options: users
+              .slice()
+              .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
+              .map((u) => ({
+                value: String(u.id),
+                label: u.name ?? u.email,
+              })),
+          },
+          // show an error message if users failed to load
+          ...(usersError
+            ? ([
+                {
+                  kind: "custom",
+                  key: "assignedUserError",
+                  colSpan: 2,
+                  render: () => (
+                    <p className="text-xs text-red-600 text-left -mt-2">
+                      {usersError}
+                    </p>
+                  ),
+                },
+              ] as FormModalField[])
+            : []),
+        ] as FormModalField[])
+      : []),
 
     // Comments (create = editable requestor comments, edit = read-only requestor + editable tech notes)
     {

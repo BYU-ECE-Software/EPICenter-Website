@@ -72,4 +72,6 @@ export async function DELETE(
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete equipment' }, { status: 500 });
   }
+
+  //Perhaps run the same MINIO cleanup here for equipment pictures if we add that feature in the future?
 }

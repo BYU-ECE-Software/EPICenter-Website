@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
         status,
         comments
       },
+      
     });
 
     return NextResponse.json(equipment, { status: 201 });

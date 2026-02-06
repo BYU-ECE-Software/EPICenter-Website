@@ -20,7 +20,7 @@ export async function GET(
   try {
     const purchasingGroup = await prisma.purchasingGroup.findUnique({
       where: { id },
-      include: { purchases: true }, // matches your model
+      include: { purchases: true },
     });
 
     if (!purchasingGroup) {
@@ -45,7 +45,6 @@ export async function PUT(
     const body = await request.json();
     const { name, supervisor, workTag, comments } = body;
 
-    // Minimal validation (consider zod for stronger validation)
     if (typeof name !== "string" || name.trim() === "") {
       return NextResponse.json({ error: "name is required" }, { status: 400 });
     }

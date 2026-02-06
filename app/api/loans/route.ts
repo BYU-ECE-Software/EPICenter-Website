@@ -35,19 +35,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, equipmentId, loanDate, returnDate, status } = body;
+    const { userId, groupId, equipmentId, loanDate, returnDate, status } = body;
 
     const loan = await prisma.loan.create({
       data: {
         userId,
+        groupId,
         equipmentId,
         loanDate,
         returnDate,
         status,
-      },
-      include: {
-        user: true,
-        equipment: true,
       },
     });
 

@@ -184,6 +184,8 @@ model Item {
   priceCents  Int
   quantity    Int
   photoURL    String?
+  datasheetURL String?
+  reorder  Boolean  @default(false)
   description String?
   location    String?
   createdAt   DateTime @default(now())
@@ -205,6 +207,7 @@ model Purchase {
   purchasingGroupId Int?
   items             Item[]
   totalCents        Int
+  receiptURL        String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

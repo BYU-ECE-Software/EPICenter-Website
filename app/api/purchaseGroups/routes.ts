@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     const q = (sp.get("q") ?? "").trim();
     const page = toInt(sp.get("page"), 1);
-    const limit = Math.min(toInt(sp.get("limit"), 20), 100); // cap limit
+    const limit = Math.min(toInt(sp.get("limit"), 20), 100);
     const skip = (page - 1) * limit;
 
     const where =

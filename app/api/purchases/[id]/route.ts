@@ -24,6 +24,7 @@ export async function GET(
         user: true,
         items: true, // ✅ was item
         purchasingGroup: true,
+        receiptURL: true
       },
     });
 
@@ -55,7 +56,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { quantity, purchasingGroupId, itemIds, totalCents } = body;
+    const { purchasingGroupId, itemIds, totalCents } = body;
 
     // If itemIds provided, replace the set (simple & predictable)
     // Alternative: support connect/disconnect arrays; see note below.
@@ -71,7 +72,7 @@ export async function PUT(
     let nextTotalCents = totalCents;
     if (
       typeof nextTotalCents !== "number" &&
-      (Array.isArray(itemIds) || typeof quantity === "number")
+      (Array.isArray(itemIds) )
     ) {
       const current = await prisma.purchase.findUnique({
         where: { id },
@@ -91,14 +92,14 @@ export async function PUT(
         select: { priceCents: true },
       });
 
-      const q = typeof quantity === "number" ? quantity : current.quantity;
-      nextTotalCents = prices.reduce((sum, i) => sum + i.priceCents, 0) * q;
+      // const q = typeof quantity === "number" ? quantity : current.quantity;
+      // nextTotalCents = prices.reduce((sum, i) => sum + i.priceCents, 0) * q;
     }
 
     const purchase = await prisma.purchase.update({
       where: { id },
       data: {
-        ...(typeof quantity === "number" && { quantity }),
+        // ...(typeof quantity === "number" && { quantity }),
         ...(typeof purchasingGroupId === "number" || purchasingGroupId === null
           ? { purchasingGroupId }
           : {}),
@@ -141,3 +142,5 @@ export async function DELETE(
     );
   }
 }
+
+//We may also investigate deleting receipts of purchases, tho I do think it will be few and far between; maybe some lib/util function we can create long term?

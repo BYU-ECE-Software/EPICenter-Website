@@ -45,9 +45,9 @@ export async function POST(request: NextRequest) {
     const {
       userId = null,
       purchasingGroupId = null,
-      quantity = 1,
       itemIds,
       totalCents,
+      receiptURL,
     } = body;
 
     if (!Array.isArray(itemIds) || itemIds.length === 0) {
@@ -55,21 +55,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Optional: compute total if not provided (recommended to avoid trusting client)
-    const computedTotalCents =
-      typeof totalCents === "number"
-        ? totalCents
-        : (await prisma.item.findMany({
-            where: { id: { in: itemIds } },
-            select: { priceCents: true },
-          }))
-            .reduce((sum, i) => sum + i.priceCents, 0) * Number(quantity || 1);
+    // const computedTotalCents =
+    //   typeof totalCents === "number"
+    //     ? totalCents
+    //     : (await prisma.item.findMany({
+    //         where: { id: { in: itemIds } },
+    //         select: { priceCents: true },
+    //       }))
+    //         .reduce((sum, i) => sum + i.priceCents, 0) * Number(quantity || 1);
 
     const purchase = await prisma.purchase.create({
       data: {
         userId,
         purchasingGroupId,
-        quantity: Number(quantity) || 1,
-        totalCents: computedTotalCents,
+        totalCents: totalCents,
+        receiptURL,
         items: {
           connect: itemIds.map((id: number) => ({ id })), // ✅ connect many items
         },

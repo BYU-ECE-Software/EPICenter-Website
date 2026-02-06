@@ -22,13 +22,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, priceCents, photoURL, description, location } = body;
+    const { name, priceCents, quantity, photoURL, datasheetURL, reorder, description, location } = body;
 
     const item = await prisma.item.create({
       data: {
         name,
         priceCents,
+        quantity,
         photoURL,
+        datasheetURL,
+        reorder,
         description,
         location,
       },

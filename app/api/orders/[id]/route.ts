@@ -14,7 +14,6 @@ export async function GET(
       where: { id: parseInt((await params).id) },
       include: {
         user: true,
-        orderType: true,
       },
     });
 
@@ -42,7 +41,6 @@ export async function PUT(
       data: {
         item,
         priceCents,
-        orderTypeId,
         status,
       },
     });

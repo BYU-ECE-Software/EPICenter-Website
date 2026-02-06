@@ -16,7 +16,7 @@ export async function GET(
         orders: true,
         purchases: {
           include: {
-            item: true,
+            items: true,
             purchasingGroup: true,
           },
         },

@@ -53,3 +53,6 @@ volumes:
 # Run: npx prisma migrate dev
 # When done, stop and remove the migration container: docker compose down
 # Finally, change the DATABASE_URL in .env back to use db as the host
+
+# On your local machine, not in Docker
+# npx prisma migrate dev --name your_migration_name

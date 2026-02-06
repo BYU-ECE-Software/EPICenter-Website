@@ -3,36 +3,44 @@
 // In containers: we use `npx prisma migrate deploy` at runtime
 
 generator client {
-    provider = "prisma-client-js"
-    binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ========== Enums ==========
 
 enum OrderStatus {
-    PENDING
-    PROCESSING
-    READY_FOR_PICKUP
-    COMPLETED
-    CANCELLED
+  UNFULFILLED
+  ASSIGNED
+  IN_PROGRESS
+  READY_FOR_PICKUP
+  FINISHED
+  CANCELLED
 }
 
 enum EquipmentStatus {
-    AVAILABLE
-    ON_LOAN
-    MAINTENANCE
-    RETIRED
+  AVAILABLE
+  ON_LOAN
+  MAINTENANCE
+  RETIRED
 }
 
 enum LoanStatus {
-    ONGOING
-    RETURNED
-    OVERDUE
+  ONGOING
+  RETURNED
+  OVERDUE
+}
+
+enum OrderTypeEnum {
+  PRINT_3D
+  LASER_CUTTING
+  PCB_MANUFACTURING
+  ITEM_PURCHASE
 }
 
 // ========== Models ==========
@@ -42,60 +50,128 @@ enum LoanStatus {
 // =====================
 
 model User {
-    id        Int        @id @default(autoincrement())
-    email     String     @unique
-    name      String?
-    netID     String?    @unique
-    byuID     String?    @unique
-    createdAt DateTime   @default(now())
-    updatedAt DateTime   @updatedAt
-    
-    // Relations
-    orders    Order[]
-    purchases Purchase[]
-    loans     Loan[]
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  netID     String?  @unique
+  byuID     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    @@index([email])
-    @@index([netID])
+  // Relations
+  orders        Order[]
+  purchases     Purchase[]
+  loans         Loan[]
+  print3DOrders Print_3D_Order[]
+  laserOrders   Laser_Order[]
+  pcbOrders     PCB_Order[]
+
+  @@index([email])
+  @@index([netID])
 }
 
+// =====================
+//      MODEL: Print_3D_Order
+// =====================
+model Print_3D_Order {
+  id                 Int         @id @default(autoincrement())
+  userId             Int?
+  groupId            Int?
+  studentName        String
+  studentEmail       String
+  modelFileURL       String
+  additionalComments String?
+  technicianComments String?
+  filamentColor      String
+  quantity           Int
+  status             OrderStatus @default(UNFULFILLED)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  // Relations
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchasingGroup PurchasingGroup? @relation(fields: [groupId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+// =====================
+//      MODEL: Laser_Order
+// =====================
+model Laser_Order {
+  id                 Int         @id @default(autoincrement())
+  userId             Int?
+  groupId            Int?
+  studentName        String
+  studentEmail       String
+  modelFileURL       String
+  additionalComments String?
+  technicianComments String?
+  status             OrderStatus @default(UNFULFILLED)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  // Relations
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchasingGroup PurchasingGroup? @relation(fields: [groupId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+// =====================
+//      MODEL: PCB_Order
+// =====================
+model PCB_Order {
+  id                 Int         @id @default(autoincrement())
+  userId             Int?
+  groupId            Int?
+  studentName        String
+  studentEmail       String
+  modelFileURL       String
+  additionalComments String?
+  technicianComments String?
+  PCBSiding          String
+  quantity           Int
+  silkscreen         Boolean
+  boardArea          Int
+  rubout             Boolean
+  costEstimateCents  Int
+  status             OrderStatus @default(UNFULFILLED)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  // Relations
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchasingGroup PurchasingGroup? @relation(fields: [groupId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
 
 // =====================
 //      MODEL: Order
 // =====================
 
 model Order {
-    id            Int         @id @default(autoincrement())
-    userId        Int
-    item          String
-    priceCents    Int
-    orderTypeId   Int
-    status        OrderStatus @default(PENDING)
-    createdAt     DateTime    @default(now())
-    updatedAt     DateTime    @updatedAt
-    
-    // Relations
-    user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-    orderType     OrderType   @relation(fields: [orderTypeId], references: [id])
+  id         Int             @id @default(autoincrement())
+  userId     Int?
+  groupId    Int?
+  item       String
+  priceCents Int
+  orderType  OrderTypeEnum[]
+  status     OrderStatus     @default(UNFULFILLED)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
-    @@index([userId])
-    @@index([orderTypeId])
-    @@index([status])
-}
+  // Relations
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchasingGroup PurchasingGroup? @relation(fields: [groupId], references: [id])
 
-// =====================
-//   MODEL: OrderType
-// =====================
-
-model OrderType {
-    id          Int      @id @default(autoincrement())
-    name        String   @unique
-    description String?
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    
-    // Relations
-    orders      Order[]
+  @@index([userId])
+  @@index([orderType])
+  @@index([status])
 }
 
 // =====================
@@ -103,19 +179,22 @@ model OrderType {
 // =====================
 
 model Item {
-    id          Int      @id @default(autoincrement())
-    name        String
-    priceCents  Int
-    photoURL    String?
-    description String?
-    location    String?
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
-    
-    // Relations
-    purchases   Purchase[]
+  id          Int      @id @default(autoincrement())
+  name        String
+  priceCents  Int
+  quantity    Int
+  photoURL    String?
+  datasheetURL String?
+  reorder  Boolean  @default(false)
+  description String?
+  location    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-    @@index([name])
+  // Relations
+  purchases Purchase[]
+
+  @@index([name])
 }
 
 // =====================
@@ -123,23 +202,21 @@ model Item {
 // =====================
 
 model Purchase {
-    id                 Int              @id @default(autoincrement())
-    userId             Int
-    itemId             Int
-    purchasingGroupId  Int?
-    quantity           Int              @default(1)
-    totalCents         Int
-    createdAt          DateTime         @default(now())
-    updatedAt          DateTime         @updatedAt
-    
-    // Relations
-    user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-    item               Item             @relation(fields: [itemId], references: [id])
-    purchasingGroup    PurchasingGroup? @relation(fields: [purchasingGroupId], references: [id])
+  id                Int      @id @default(autoincrement())
+  userId            Int?
+  purchasingGroupId Int?
+  items             Item[]
+  totalCents        Int
+  receiptURL        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-    @@index([userId])
-    @@index([itemId])
-    @@index([purchasingGroupId])
+  // Relations
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchasingGroup PurchasingGroup? @relation(fields: [purchasingGroupId], references: [id])
+
+  @@index([userId])
+  @@index([purchasingGroupId])
 }
 
 // =====================
@@ -147,14 +224,21 @@ model Purchase {
 // =====================
 
 model PurchasingGroup {
-    id          Int        @id @default(autoincrement())
-    name        String
-    description String?
-    createdAt   DateTime   @default(now())
-    updatedAt   DateTime   @updatedAt
-    
-    // Relations
-    purchases   Purchase[]
+  id         Int      @id @default(autoincrement())
+  name       String
+  supervisor String?
+  workTag    String
+  comments   String?
+  loans      Loan[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  purchases     Purchase[]
+  print3DOrders Print_3D_Order[]
+  laserOrders   Laser_Order[]
+  pcbOrders     PCB_Order[]
+  orders        Order[]
 }
 
 // =====================
@@ -162,42 +246,45 @@ model PurchasingGroup {
 // =====================
 
 model Equipment {
-    id           Int             @id @default(autoincrement())
-    name         String
-    serialNumber String          @unique
-    location     String?
-    pictureURL   String?
-    status       EquipmentStatus @default(AVAILABLE)
-    createdAt    DateTime        @default(now())
-    updatedAt    DateTime        @updatedAt
-    
-    // Relations
-    loans        Loan[]
+  id           Int             @id @default(autoincrement())
+  name         String
+  serialNumber String          @unique
+  location     String?
+  pictureURL   String?
+  status       EquipmentStatus @default(AVAILABLE)
+  comments     String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
-    @@index([serialNumber])
-    @@index([status])
+  // Relations
+  loans Loan[]
+
+  @@index([serialNumber])
+  @@index([status])
 }
-
 
 // =====================
 //   MODEL: Loan
 // =====================
 
 model Loan {
-    id          Int        @id @default(autoincrement())
-    userId      Int
-    equipmentId Int
-    loanDate    DateTime   @default(now())
-    returnDate  DateTime?
-    status      LoanStatus @default(ONGOING)
-    createdAt   DateTime   @default(now())
-    updatedAt   DateTime   @updatedAt
-    
-    // Relations
-    user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-    equipment   Equipment  @relation(fields: [equipmentId], references: [id])
+  id          Int        @id @default(autoincrement())
+  userId      Int?
+  groupId     Int?
+  equipmentId Int
+  loanDate    DateTime   @default(now())
+  returnDate  DateTime?
+  status      LoanStatus @default(ONGOING)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
-    @@index([userId])
-    @@index([equipmentId])
-    @@index([status])
+  // Relations
+  user      User?            @relation(fields: [userId], references: [id])
+  equipment Equipment        @relation(fields: [equipmentId], references: [id])
+  group     PurchasingGroup? @relation(fields: [groupId], references: [id])
+
+  @@index([userId])
+  @@index([equipmentId])
+  @@index([status])
+  @@index([groupId])
 }

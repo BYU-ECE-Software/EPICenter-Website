@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
       },
       include: {
         user: true,
-        orderType: true,
       },
     });
 
@@ -32,19 +31,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, item, priceCents, orderTypeId, status } = body;
+    const { userId, item, priceCents, status } = body;
 
     const order = await prisma.order.create({
       data: {
         userId,
         item,
         priceCents,
-        orderTypeId,
         status,
       },
       include: {
         user: true,
-        orderType: true,
       },
     });
 

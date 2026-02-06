@@ -38,7 +38,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const { name, serialNumber, location, pictureURL, status } = body;
+    const { name, serialNumber, location, pictureURL, status, comments } = body;
 
     const equipment = await prisma.equipment.update({
       where: { id: parseInt((await params).id) },
@@ -48,6 +48,7 @@ export async function PUT(
         location,
         pictureURL,
         status,
+        comments,
       },
     });
 
@@ -71,4 +72,6 @@ export async function DELETE(
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete equipment' }, { status: 500 });
   }
+
+  //Perhaps run the same MINIO cleanup here for equipment pictures if we add that feature in the future?
 }

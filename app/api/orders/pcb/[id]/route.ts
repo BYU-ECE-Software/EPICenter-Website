@@ -7,14 +7,18 @@ import { prisma } from "@/lib/prisma";
 // GET /api/orders/pcb/:id
 export async function GET(
   _request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr, 10);
 
     const order = await prisma.pCB_Order.findUnique({
       where: { id },
-      include: { user: true, purchasingGroup: true },
+      include: {
+        user: true,
+        purchasingGroup: true,
+      },
     });
 
     if (!order) {
@@ -33,10 +37,11 @@ export async function GET(
 // PATCH /api/orders/pcb/:id
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr, 10);
     const body = await request.json();
 
     const updated = await prisma.pCB_Order.update({
@@ -64,10 +69,11 @@ export async function PATCH(
 // PUT /api/orders/pcb/:id
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr, 10);
     const body = await request.json();
 
     const {
@@ -119,12 +125,15 @@ export async function PUT(
 // DELETE /api/orders/pcb/:id
 export async function DELETE(
   _request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr, 10);
 
-    await prisma.pCB_Order.delete({ where: { id } });
+    await prisma.pCB_Order.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -3,6 +3,7 @@
 // =============================================
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 function toInt(value: string | null, fallback: number) {
   const n = Number(value);
@@ -19,14 +20,14 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(toInt(sp.get("limit"), 20), 100);
     const skip = (page - 1) * limit;
 
-    const where =
+    const where: Prisma.PurchasingGroupWhereInput =
       q.length > 0
         ? {
             OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { workTag: { contains: q, mode: "insensitive" } },
-              { supervisor: { contains: q, mode: "insensitive" } },
-              { comments: { contains: q, mode: "insensitive" } },
+              { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
+              { workTag: { contains: q, mode: Prisma.QueryMode.insensitive } },
+              { supervisor: { contains: q, mode: Prisma.QueryMode.insensitive } },
+              { comments: { contains: q, mode: Prisma.QueryMode.insensitive } },
             ],
           }
         : {};
@@ -50,7 +51,10 @@ export async function GET(request: NextRequest) {
       q,
     });
   } catch {
-    return NextResponse.json({ error: "Failed to fetch purchaseGroups" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch purchaseGroups" },
+      { status: 500 }
+    );
   }
 }
 
@@ -78,6 +82,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(purchasingGroup, { status: 201 });
   } catch {
-    return NextResponse.json({ error: "Failed to create purchaseGroup" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create purchaseGroup" },
+      { status: 500 }
+    );
   }
 }

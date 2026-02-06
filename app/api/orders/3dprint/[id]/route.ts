@@ -4,13 +4,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// NOTE: In some Next versions, params is typed as a Promise.
+// Use: { params }: { params: Promise<{ id: string }> } and await it.
+
 // GET /api/orders/3dprint/:id
 export async function GET(
   _request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr, 10);
 
     const order = await prisma.print_3D_Order.findUnique({
       where: { id },
@@ -30,20 +34,20 @@ export async function GET(
   }
 }
 
-// PATCH /api/orders/3dprint/:id (partial update)
+// PATCH /api/orders/3dprint/:id
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr, 10);
     const body = await request.json();
 
     const updated = await prisma.print_3D_Order.update({
       where: { id },
       data: {
         ...body,
-        // optionally normalize nullables:
         ...(body.additionalComments !== undefined && {
           additionalComments: body.additionalComments ?? null,
         }),
@@ -65,10 +69,11 @@ export async function PATCH(
 // PUT /api/orders/3dprint/:id
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr, 10);
     const body = await request.json();
 
     const {
@@ -112,10 +117,11 @@ export async function PUT(
 // DELETE /api/orders/3dprint/:id
 export async function DELETE(
   _request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const { id: idStr } = await params;
+    const id = parseInt(idStr, 10);
 
     await prisma.print_3D_Order.delete({ where: { id } });
 

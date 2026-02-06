@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-type DataTableColumn = {
+export type DataTableColumn = {
   /** Key used to read data from the row if no custom render is provided */
   key: string;
   /** Column header label */
@@ -83,7 +83,7 @@ export default function DataTable({
               {data.map((row, rowIndex) => (
                 <tr
                   key={
-                    getRowKey ? getRowKey(row, rowIndex) : row.id ?? rowIndex
+                    getRowKey ? getRowKey(row, rowIndex) : (row.id ?? rowIndex)
                   }
                   className="hover:bg-byu-royal/10 transition-colors"
                 >

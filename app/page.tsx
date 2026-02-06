@@ -1,89 +1,278 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import BaseModal from "@/components/BaseModal";
+import { useState, useEffect } from "react";
+import Print3DRequestFormModal from "@/components/forms/Print3DRequestForm";
+import type { Print3DFormValues } from "@/components/forms/Print3DRequestForm";
+import PcbMillRequestFormModal from "@/components/forms/PCBMillRequestForm";
+import type { PcbMillFormValues } from "@/components/forms/PCBMillRequestForm";
+import LaserCutRequestFormModal from "@/components/forms/LaserRequestForm";
+import type { LaserCutFormValues } from "@/components/forms/LaserRequestForm";
+import {
+  validatePositiveInt,
+  positiveIntError,
+  isEmailValid,
+  emailError,
+} from "@/lib/utils/validation";
 
 export default function Home() {
-  // Modal open/close
+  // Modal open/close - for each of the three forms
   const [printModalOpen, setPrintModalOpen] = useState(false);
+  const [pcbModalOpen, setPcbModalOpen] = useState(false);
+  const [laserModalOpen, setLaserModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Section 1: Request Information
-  const [requestName, setRequestName] = useState("");
-  const [requestEmail, setRequestEmail] = useState("");
+  // 3D Print Modal Form
+  const [printForm, setPrintForm] = useState<Print3DFormValues>({
+    requestName: "",
+    requestEmail: "",
+    file: null as File | null,
+    printQuantity: "1",
+    filamentColor: "",
+    assignedToUserId: "",
+    comments: "",
+    technicianNotes: "",
+  });
 
-  // Section 2: Print File
-  const [printFile, setPrintFile] = useState<File | null>(null);
+  // PCB Mill Modal Form
+  const [pcbForm, setPcbForm] = useState<PcbMillFormValues>({
+    requestName: "",
+    requestEmail: "",
+    file: null as File | null,
+    pcbSiding: "single",
+    boardQuantity: "1",
+    silkscreen: "no",
+    boardArea: "",
+    rubout: "no",
+    assignedToUserId: "",
+    comments: "",
+    technicianNotes: "",
+  });
 
-  // Section 3: Print Settings
-  const [printQuantity, setPrintQuantity] = useState("1");
-  const [filamentColor, setFilamentColor] = useState("");
-  const [infillPercent, setInfillPercent] = useState("");
-  const [comments, setComments] = useState("");
+  // Laser Cut Modal Form
+  const [laserForm, setLaserForm] = useState<LaserCutFormValues>({
+    requestName: "",
+    requestEmail: "",
+    file: null as File | null,
+    confirmedCalendar: false,
+    confirmedResponsibility: false,
+    assignedToUserId: "",
+    comments: "",
+    technicianNotes: "",
+  });
 
+  // Check that user entered a valid email - one for each form
+  const isPrintEmailValid = isEmailValid(printForm.requestEmail);
+  const isPcbEmailValid = isEmailValid(pcbForm.requestEmail);
+  const isLaserEmailValid = isEmailValid(laserForm.requestEmail);
+
+  // Reset 3d Print Form
   const reset3DPrintForm = () => {
-    setRequestName("");
-    setRequestEmail("");
-    setPrintFile(null);
-    setPrintQuantity("1");
-    setFilamentColor("");
-    setInfillPercent("");
-    setComments("");
+    setPrintForm({
+      requestName: "",
+      requestEmail: "",
+      file: null,
+      printQuantity: "1",
+      filamentColor: "",
+      assignedToUserId: "",
+      comments: "",
+      technicianNotes: "",
+    });
   };
 
+  // Close 3D Print Modal
   const close3DPrintModal = () => {
     setPrintModalOpen(false);
     reset3DPrintForm();
   };
 
-  const isEmailValid = useMemo(() => {
-    const v = requestEmail.trim();
-    return v.includes("@") && v.includes(".");
-  }, [requestEmail]);
+  // Check that user entered a valid integer
+  const printQty = validatePositiveInt(printForm.printQuantity);
+  const isQuantityValid = printQty.isValid;
 
-  const quantityNumber = Number(printQuantity);
-  const infillNumber = Number(infillPercent);
-
-  const isQuantityValid =
-    Number.isInteger(quantityNumber) &&
-    Number.isFinite(quantityNumber) &&
-    quantityNumber > 0;
-
-  const isInfillValid =
-    Number.isInteger(infillNumber) &&
-    Number.isFinite(infillNumber) &&
-    infillNumber >= 5 &&
-    infillNumber <= 15;
-
-  // Required fields gate
-  const isSubmitDisabled =
-    !requestName.trim() ||
-    !isEmailValid ||
-    !printFile ||
+  // Required fields gate for 3D print
+  const is3DSubmitDisabled =
+    !printForm.requestName.trim() ||
+    !isPrintEmailValid ||
+    !printForm.file ||
     !isQuantityValid ||
-    !filamentColor.trim() ||
-    !isInfillValid;
+    !printForm.filamentColor.trim();
 
+  // Submitting 3D Print Form
   const handle3DPrintSubmit = async () => {
-    if (isSubmitDisabled) return;
+    if (is3DSubmitDisabled) return;
 
     setSaving(true);
     try {
       // Placeholder for now
       console.log("3D Print Request", {
-        name: requestName.trim(),
-        email: requestEmail.trim(),
-        file: printFile?.name,
-        quantity: Number(printQuantity),
-        filamentColor: filamentColor.trim(),
-        infillPercent: Number(infillPercent),
-        comments: comments.trim(),
+        name: printForm.requestName.trim(),
+        email: printForm.requestEmail.trim(),
+        file: printForm.file?.name,
+        quantity: Number(printForm.printQuantity),
+        filamentColor: printForm.filamentColor.trim(),
+        comments: printForm.comments.trim(),
       });
 
       close3DPrintModal();
     } finally {
       setSaving(false);
     }
+  };
+
+  // 3D Print errors
+  const errors = {
+    requestEmail: emailError(printForm.requestEmail),
+    printQuantity: positiveIntError(printQty, "quantity"),
+  };
+
+  // Reset PCB Mill Form
+  const resetPcbForm = () => {
+    setPcbForm({
+      requestName: "",
+      requestEmail: "",
+      file: null,
+      pcbSiding: "single",
+      boardQuantity: "1",
+      silkscreen: "no",
+      boardArea: "",
+      rubout: "no",
+      assignedToUserId: "",
+      comments: "",
+      technicianNotes: "",
+    });
+  };
+
+  // Close PCB Mill Form
+  const closePcbModal = () => {
+    setPcbModalOpen(false);
+    resetPcbForm();
+  };
+
+  // check that user entered valid integers
+  const pcbQty = validatePositiveInt(pcbForm.boardQuantity);
+  const pcbArea = validatePositiveInt(pcbForm.boardArea);
+
+  const isBoardQtyValid = pcbQty.isValid;
+  const isBoardAreaValid = pcbArea.isValid;
+
+  // Pricing (per in^2)
+  const sidingRate = pcbForm.pcbSiding === "double" ? 0.8 : 0.4;
+  const silkscreenRate =
+    pcbForm.pcbSiding === "single" && pcbForm.silkscreen === "yes" ? 0.2 : 0;
+  const ruboutRate = pcbForm.rubout === "yes" ? 0.1 : 0;
+
+  const ratePerIn2 = sidingRate + silkscreenRate + ruboutRate;
+
+  // Estimate = (rate per in^2) * area * qty
+  const costEstimate =
+    isBoardQtyValid && isBoardAreaValid
+      ? ratePerIn2 * pcbArea.num * pcbQty.num
+      : 0;
+
+  const costEstimateText =
+    isBoardQtyValid && isBoardAreaValid ? `$${costEstimate.toFixed(2)}` : "";
+
+  // Required fields gate for PCB Mill
+  const isPcbSubmitDisabled =
+    !pcbForm.requestName.trim() ||
+    !isPcbEmailValid ||
+    !pcbForm.file ||
+    !isBoardQtyValid ||
+    !isBoardAreaValid;
+
+  // Force Silkscreen to "no" when double sided is selected
+  useEffect(() => {
+    if (pcbForm.pcbSiding === "double" && pcbForm.silkscreen !== "no") {
+      setPcbForm((p) => ({ ...p, silkscreen: "no" }));
+    }
+  }, [pcbForm.pcbSiding, pcbForm.silkscreen]);
+
+  // Submitting PCB Mill Form
+  const handlePcbSubmit = async () => {
+    if (isPcbSubmitDisabled) return;
+
+    setSaving(true);
+    try {
+      console.log("PCB Mill Request", {
+        name: pcbForm.requestName.trim(),
+        email: pcbForm.requestEmail.trim(),
+        file: pcbForm.file?.name,
+
+        pcbSiding: pcbForm.pcbSiding,
+        boardQuantity: pcbQty.num,
+        silkscreen: pcbForm.silkscreen,
+        boardArea: pcbArea.num,
+        rubout: pcbForm.rubout,
+        estimatedCost: costEstimateText,
+
+        comments: pcbForm.comments.trim(),
+      });
+
+      closePcbModal();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // PCB Mill errors
+  const pcbErrors = {
+    requestEmail: emailError(pcbForm.requestEmail),
+    boardQuantity: positiveIntError(pcbQty, "quantity"),
+    boardArea: positiveIntError(pcbArea, "area"),
+  };
+
+  //Reset Laser cut form modal
+  const resetLaserForm = () => {
+    setLaserForm({
+      requestName: "",
+      requestEmail: "",
+      file: null,
+      confirmedCalendar: false,
+      confirmedResponsibility: false,
+      assignedToUserId: "",
+      comments: "",
+      technicianNotes: "",
+    });
+  };
+
+  // close laser cut form modal
+  const closeLaserModal = () => {
+    setLaserModalOpen(false);
+    resetLaserForm();
+  };
+
+  // Required fields gate for Laser Cut
+  const isLaserSubmitDisabled =
+    !laserForm.requestName.trim() ||
+    !isLaserEmailValid ||
+    !laserForm.file ||
+    !laserForm.confirmedCalendar ||
+    !laserForm.confirmedResponsibility;
+
+  // Submitting Laser Cut Form
+  const handleLaserSubmit = async () => {
+    if (isLaserSubmitDisabled) return;
+
+    setSaving(true);
+    try {
+      console.log("Laser Cut Request", {
+        name: laserForm.requestName.trim(),
+        email: laserForm.requestEmail.trim(),
+        file: laserForm.file?.name,
+        confirmedCalendar: laserForm.confirmedCalendar,
+        confirmedResponsibility: laserForm.confirmedResponsibility,
+        comments: laserForm.comments.trim(),
+      });
+
+      closeLaserModal();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Laser cut errors
+  const laserErrors = {
+    requestEmail: emailError(laserForm.requestEmail),
   };
 
   return (
@@ -126,6 +315,7 @@ export default function Home() {
           <button
             type="button"
             className="px-5 py-3 rounded-md border border-byu-royal text-byu-royal bg-white hover:bg-byu-royal hover:text-white transition text-sm font-medium"
+            onClick={() => setPcbModalOpen(true)}
           >
             PCB Mill Request
           </button>
@@ -133,199 +323,52 @@ export default function Home() {
           <button
             type="button"
             className="px-5 py-3 rounded-md border border-byu-royal text-byu-royal bg-white hover:bg-byu-royal hover:text-white transition text-sm font-medium"
+            onClick={() => setLaserModalOpen(true)}
           >
             Laser Cut Request
           </button>
         </div>
 
         {/* 3D Print Request Modal */}
-        <BaseModal
+        <Print3DRequestFormModal
+          mode="create"
           open={printModalOpen}
           onClose={close3DPrintModal}
           onSubmit={handle3DPrintSubmit}
-          title="New 3D Print Request"
-          size="lg"
           saving={saving}
           saveLabel="Submit Request"
-          submitDisabled={isSubmitDisabled}
-        >
-          <div className="grid grid-cols-1 gap-6">
-            {/* Request Info Section */}
-            <section className="text-left">
-              <h3 className="text-base font-semibold text-byu-navy mb-4">
-                Request Information
-              </h3>
+          submitDisabled={is3DSubmitDisabled}
+          values={printForm}
+          setValues={setPrintForm}
+          errors={errors}
+        />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                    placeholder="Enter your name..."
-                    value={requestName}
-                    onChange={(e) => setRequestName(e.target.value)}
-                  />
-                </div>
+        {/* PCB Mill Request Modal */}
+        <PcbMillRequestFormModal
+          mode="create"
+          open={pcbModalOpen}
+          onClose={closePcbModal}
+          onSubmit={handlePcbSubmit}
+          saving={saving}
+          submitDisabled={isPcbSubmitDisabled}
+          values={pcbForm}
+          setValues={setPcbForm}
+          errors={pcbErrors}
+        />
 
-                <div>
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                    placeholder="name@byu.edu"
-                    value={requestEmail}
-                    onChange={(e) => setRequestEmail(e.target.value)}
-                  />
-                  {!requestEmail.trim() || isEmailValid ? null : (
-                    <p className="mt-1 text-xs text-red-600">
-                      Enter a valid email.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            {/* Section divider */}
-            <div className="border-t border-gray-200" />
-
-            {/* Print File Section */}
-            <section className="text-left">
-              <h3 className="text-base font-semibold text-byu-navy mb-2">
-                Print File
-              </h3>
-
-              <p className="text-xs text-gray-600 mb-3">
-                We accept .stl, .3mf, .stp
-              </p>
-
-              <div className="flex items-center gap-3">
-                <label className="inline-flex items-center justify-center rounded-sm bg-gray-100 border border-black px-2 py-1 text-sm text-black cursor-pointer hover:bg-gray-200 transition">
-                  Choose file
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".stl,.3mf,.stp"
-                    onChange={(e) => setPrintFile(e.target.files?.[0] ?? null)}
-                  />
-                </label>
-
-                <div className="text-sm text-gray-700 truncate max-w-[22rem]">
-                  {printFile ? (
-                    printFile.name
-                  ) : (
-                    <span className="text-gray-400">No file selected</span>
-                  )}
-                </div>
-              </div>
-
-              <p className="mt-3 text-xs font-medium text-gray-600">
-                3D Prints cost $0.10 per gram
-              </p>
-            </section>
-
-            {/* Section divider */}
-            <div className="border-t border-gray-200" />
-
-            {/* Print Settings Section */}
-            <section className="text-left">
-              <h3 className="text-base font-semibold text-byu-navy mb-4">
-                Print Settings
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                {/* Print Quantity */}
-                <div className="md:col-span-3">
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Print Quantity *
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                    value={printQuantity}
-                    onChange={(e) => setPrintQuantity(e.target.value)}
-                  />
-                  {!printQuantity || isQuantityValid ? null : (
-                    <p className="mt-1 text-xs text-red-600">
-                      Enter a quantity of 1 or more.
-                    </p>
-                  )}
-                </div>
-
-                {/* Infill */}
-                <div className="md:col-span-4">
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Infill (Between 5–15) *
-                  </label>
-
-                  <div className="relative">
-                    {/* % suffix */}
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                      %
-                    </span>
-
-                    <input
-                      type="number"
-                      min={5}
-                      max={15}
-                      step={1}
-                      className="w-full rounded-md border border-gray-300 pr-8 pl-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                      value={infillPercent}
-                      onChange={(e) => setInfillPercent(e.target.value)}
-                    />
-                  </div>
-
-                  {!infillPercent || isInfillValid ? null : (
-                    <p className="mt-1 text-xs text-red-600">
-                      Infill must be between 5 and 15.
-                    </p>
-                  )}
-                </div>
-
-                {/* Filament Color */}
-                <div className="md:col-span-5">
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Filament Color (1st choice) *
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                    placeholder="e.g., Black"
-                    value={filamentColor}
-                    onChange={(e) => setFilamentColor(e.target.value)}
-                  />
-                </div>
-
-                {/* Additional Comments */}
-                <div className="md:col-span-12">
-                  <label className="block text-sm font-medium text-byu-navy mb-1">
-                    Additional Comments
-                  </label>
-
-                  <p className="mb-2 text-xs text-gray-600">
-                    Use this to note any special settings (layer height, speed,
-                    supports, orientation, etc). Most prints will work with our
-                    default settings.
-                  </p>
-
-                  <textarea
-                    rows={3}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-byu-royal focus:border-byu-royal"
-                    placeholder="Optional notes..."
-                    value={comments}
-                    onChange={(e) => setComments(e.target.value)}
-                  />
-                </div>
-              </div>
-            </section>
-          </div>
-        </BaseModal>
+        {/* Laser Cut Request Modal */}
+        <LaserCutRequestFormModal
+          mode="create"
+          open={laserModalOpen}
+          onClose={closeLaserModal}
+          onSubmit={handleLaserSubmit}
+          saving={saving}
+          saveLabel="Submit Request"
+          submitDisabled={isLaserSubmitDisabled}
+          values={laserForm}
+          setValues={setLaserForm}
+          errors={laserErrors}
+        />
       </div>
     </main>
   );

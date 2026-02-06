@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRole } from "@/app/providers/RoleProvider";
 import { FiChevronDown, FiShoppingCart } from "react-icons/fi";
 import { useClickOutside } from "@/lib/hooks/useClickOutside";
+import { useCart } from "@/app/providers/CartProvider";
+import CountBadge from "./CountBadge";
 
 const HeaderBar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -21,6 +23,11 @@ const HeaderBar: React.FC = () => {
   // Project Requests dropdown refs
   const projectRequestsMobileWrapRef = useRef<HTMLDivElement | null>(null);
   const projectRequestsDesktopWrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Compute Count of Items in Cart
+  // This is total quantity, not just unique items. Up for debate?
+  const { items } = useCart();
+  const cartCount = items.reduce((sum, x) => sum + x.qty, 0);
 
   useLayoutEffect(() => {
     const update = () => {
@@ -47,7 +54,7 @@ const HeaderBar: React.FC = () => {
       enabled: projectRequestsOpen,
       onOutsideClick: () => setProjectRequestsOpen(false),
       onEscapeKey: () => setProjectRequestsOpen(false),
-    }
+    },
   );
 
   return (
@@ -70,7 +77,7 @@ const HeaderBar: React.FC = () => {
                 className="h-10 w-auto"
               />
             </a>
-            <h1 className="text-2xl">Experiential Learning Center</h1>
+            <h1 className="text-2xl">EPICenter</h1>
           </div>
 
           {/* Right side: static label + mobile hamburger */}
@@ -106,10 +113,16 @@ const HeaderBar: React.FC = () => {
             {isEmployee && (
               <Link
                 href="/cart"
-                className="hidden sm:inline-flex items-center justify-center p-2  focus:outline-none cursor-pointer"
+                className="relative hidden sm:inline-flex items-center justify-center p-2  focus:outline-none cursor-pointer"
                 aria-label="View cart"
               >
                 <FiShoppingCart className="h-6 w-6 text-white" />
+
+                {cartCount > 0 && (
+                  <CountBadge className="absolute -top-1 -right-1 h-5 min-w-[20px] bg-byu-royal text-white">
+                    {cartCount}
+                  </CountBadge>
+                )}
               </Link>
             )}
 
@@ -151,7 +164,15 @@ const HeaderBar: React.FC = () => {
                 onClick={() => setMobileOpen(false)}
                 className="px-6 py-4 text-left hover:bg-[#FAFAFA] flex items-center gap-2"
               >
-                <FiShoppingCart className="h-5 w-5 text-byu-navy mr-3" />
+                <span className="relative mr-3">
+                  <FiShoppingCart className="h-5 w-5 text-byu-navy mr-3" />
+
+                  {cartCount > 0 && (
+                    <CountBadge className="pointer-events-none absolute -top-2 -right-1 h-4 min-w-[16px] bg-byu-royal text-white">
+                      {cartCount}
+                    </CountBadge>
+                  )}
+                </span>
                 <span>Cart</span>
               </Link>
             )}
@@ -172,57 +193,68 @@ const HeaderBar: React.FC = () => {
               Lab Equipment
             </Link>
 
-            {/* Project Requests with nested items */}
-            <div ref={projectRequestsMobileWrapRef}>
-              <button
-                type="button"
-                onClick={() => setProjectRequestsOpen((open) => !open)}
-                className={`flex items-center justify-between px-6 py-4 text-left hover:bg-[#FAFAFA] ${
-                  projectRequestsOpen ? "bg-[#FAFAFA]" : ""
-                }`}
-              >
-                <span>Project Requests</span>
-                <FiChevronDown
-                  className="w-4 h-4 text-byu-navy"
-                  aria-hidden="true"
-                />
-              </button>
+            {/* Project Requests with nested items for employees or list of individual projects per student */}
+            {isEmployee ? (
+              <div ref={projectRequestsMobileWrapRef}>
+                <button
+                  type="button"
+                  onClick={() => setProjectRequestsOpen((open) => !open)}
+                  className={`flex items-center justify-between px-6 py-4 text-left hover:bg-[#FAFAFA] ${
+                    projectRequestsOpen ? "bg-[#FAFAFA]" : ""
+                  }`}
+                >
+                  <span>Project Requests</span>
+                  <FiChevronDown
+                    className="w-4 h-4 text-byu-navy"
+                    aria-hidden="true"
+                  />
+                </button>
 
-              {projectRequestsOpen && (
-                <div className="flex flex-col text-sm">
-                  <Link
-                    href="/3Dprint"
-                    onClick={() => {
-                      setProjectRequestsOpen(false);
-                      setMobileOpen(false);
-                    }}
-                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
-                  >
-                    3D Print
-                  </Link>
-                  <Link
-                    href="/PCBmill"
-                    onClick={() => {
-                      setProjectRequestsOpen(false);
-                      setMobileOpen(false);
-                    }}
-                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
-                  >
-                    PCB Mill
-                  </Link>
-                  <Link
-                    href="/laserCut"
-                    onClick={() => {
-                      setProjectRequestsOpen(false);
-                      setMobileOpen(false);
-                    }}
-                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
-                  >
-                    Laser Cut
-                  </Link>
-                </div>
-              )}
-            </div>
+                {projectRequestsOpen && (
+                  <div className="flex flex-col text-sm">
+                    <Link
+                      href="/3Dprint"
+                      onClick={() => {
+                        setProjectRequestsOpen(false);
+                        setMobileOpen(false);
+                      }}
+                      className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                    >
+                      3D Print
+                    </Link>
+                    <Link
+                      href="/PCBmill"
+                      onClick={() => {
+                        setProjectRequestsOpen(false);
+                        setMobileOpen(false);
+                      }}
+                      className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                    >
+                      PCB Mill
+                    </Link>
+                    <Link
+                      href="/laserCut"
+                      onClick={() => {
+                        setProjectRequestsOpen(false);
+                        setMobileOpen(false);
+                      }}
+                      className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                    >
+                      Laser Cut
+                    </Link>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Student view */
+              <Link
+                href="/projectRequests"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
+              >
+                Project Requests
+              </Link>
+            )}
 
             {isEmployee && (
               <Link
@@ -231,6 +263,26 @@ const HeaderBar: React.FC = () => {
                 className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
               >
                 Loans
+              </Link>
+            )}
+
+            {isEmployee && (
+              <Link
+                href="/receipts"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
+              >
+                Receipts
+              </Link>
+            )}
+
+            {isEmployee && (
+              <Link
+                href="/groups"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
+              >
+                Groups
               </Link>
             )}
           </nav>
@@ -267,48 +319,59 @@ const HeaderBar: React.FC = () => {
             Lab Equipment
           </Link>
 
-          {/* Project Requests tab with dropdown */}
-          <div className="relative" ref={projectRequestsDesktopWrapRef}>
-            <button
-              type="button"
-              className={`px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover inline-flex items-center gap-2 ${
-                projectRequestsOpen ? "bg-[#FAFAFA] nav-link-active" : ""
-              }`}
-              onClick={() => setProjectRequestsOpen((open) => !open)}
-            >
-              <span>Project Requests</span>
-              <FiChevronDown
-                className="w-3 h-3 text-byu-navy"
-                aria-hidden="true"
-              />
-            </button>
+          {/* Project Requests tab with dropdown for employees or list of individual projects per student */}
+          {isEmployee ? (
+            <div className="relative" ref={projectRequestsDesktopWrapRef}>
+              <button
+                type="button"
+                className={`px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover inline-flex items-center gap-2 ${
+                  projectRequestsOpen ? "bg-[#FAFAFA] nav-link-active" : ""
+                }`}
+                onClick={() => setProjectRequestsOpen((open) => !open)}
+              >
+                <span>Project Requests</span>
+                <FiChevronDown
+                  className="w-3 h-3 text-byu-navy"
+                  aria-hidden="true"
+                />
+              </button>
 
-            {projectRequestsOpen && (
-              <div className="absolute left-0 top-full mt-0 w-64 bg-white border border-gray-200 shadow-lg">
-                <Link
-                  href="/3Dprint"
-                  onClick={() => setProjectRequestsOpen(false)}
-                  className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
-                >
-                  3D Print
-                </Link>
-                <Link
-                  href="/PCBmill"
-                  onClick={() => setProjectRequestsOpen(false)}
-                  className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
-                >
-                  PCB Mill
-                </Link>
-                <Link
-                  href="/laserCut"
-                  onClick={() => setProjectRequestsOpen(false)}
-                  className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
-                >
-                  Laser Cut
-                </Link>
-              </div>
-            )}
-          </div>
+              {projectRequestsOpen && (
+                <div className="absolute left-0 top-full mt-0 w-64 bg-white border border-gray-200 shadow-lg">
+                  <Link
+                    href="/3Dprint"
+                    onClick={() => setProjectRequestsOpen(false)}
+                    className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                  >
+                    3D Print
+                  </Link>
+                  <Link
+                    href="/PCBmill"
+                    onClick={() => setProjectRequestsOpen(false)}
+                    className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                  >
+                    PCB Mill
+                  </Link>
+                  <Link
+                    href="/laserCut"
+                    onClick={() => setProjectRequestsOpen(false)}
+                    className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                  >
+                    Laser Cut
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Student view */
+            <Link
+              href="/projectRequests"
+              className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
+            >
+              Project Requests
+            </Link>
+          )}
+
           {/* Loans tab (employee only) */}
           {isEmployee && (
             <Link
@@ -316,6 +379,26 @@ const HeaderBar: React.FC = () => {
               className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
             >
               Loans
+            </Link>
+          )}
+
+          {/* Receipts tab (employee only) */}
+          {isEmployee && (
+            <Link
+              href="/receipts"
+              className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
+            >
+              Receipts
+            </Link>
+          )}
+
+          {/* Groups tab (employee only) */}
+          {isEmployee && (
+            <Link
+              href="/groups"
+              className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
+            >
+              Groups
             </Link>
           )}
         </div>

@@ -46,19 +46,20 @@ export async function PUT(
     const id = parseInt((await params).id, 10);
 
     const body = await request.json();
-    const { name, priceCents, photoURL, description, location } = body;
+    const { name, priceCents, photoURL, datasheetURL, reorder, description, location } = body;
 
     // 1) Grab the existing photo key before updating
-    const existing = await prisma.item.findUnique({
+    const photoExisting = await prisma.item.findUnique({
       where: { id },
-      select: { photoURL: true },
+      select: { photoURL: true, datasheetURL: true },
     });
 
-    if (!existing) {
+    if (!photoExisting) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
-    const oldKey = existing.photoURL ?? null;
+    const oldPhotoKey = photoExisting.photoURL ?? null;
+    const oldDatasheetKey = photoExisting.datasheetURL ?? null;
 
     // 2) Update the item (normalize photoURL to null if missing)
     const item = await prisma.item.update({
@@ -67,17 +68,30 @@ export async function PUT(
         name,
         priceCents,
         photoURL: photoURL ?? null,
+        datasheetURL: datasheetURL ?? null,
+        reorder,
         description,
         location,
       },
     });
 
-    const newKey = item.photoURL ?? null;
+    const newPhotoKey = item.photoURL ?? null;
+    const newDatasheetKey = item.datasheetURL ?? null;
 
     // 3) If the photo changed OR was removed, delete the old object from MinIO
-    if (oldKey && oldKey !== newKey) {
+    if (oldPhotoKey && oldPhotoKey !== newPhotoKey) {
       try {
-        await minioClient.removeObject(ITEM_IMAGES_BUCKET, oldKey);
+        await minioClient.removeObject(ITEM_IMAGES_BUCKET, oldPhotoKey);
+      } catch (err) {
+        // Best-effort cleanup: do not fail the update if MinIO delete fails
+        console.warn("MinIO old image cleanup failed:", err);
+      }
+    }
+
+    // 3) If the datasheet changed OR was removed, delete the old object from MinIO
+    if (oldDatasheetKey && oldDatasheetKey !== newDatasheetKey) {
+      try {
+        await minioClient.removeObject(ITEM_IMAGES_BUCKET, oldDatasheetKey);
       } catch (err) {
         // Best-effort cleanup: do not fail the update if MinIO delete fails
         console.warn("MinIO old image cleanup failed:", err);
@@ -105,7 +119,7 @@ export async function DELETE(
     // 1) Find the item first so we can grab the MinIO key
     const existing = await prisma.item.findUnique({
       where: { id },
-      select: { photoURL: true },
+      select: { photoURL: true, datasheetURL: true },
     });
 
     if (!existing) {
@@ -121,6 +135,15 @@ export async function DELETE(
     if (existing.photoURL) {
       try {
         await minioClient.removeObject(ITEM_IMAGES_BUCKET, existing.photoURL);
+      } catch (err) {
+        // don't fail the whole deletion if MinIO cleanup fails
+        console.warn("MinIO image delete failed:", err);
+      }
+    }
+
+    if (existing.datasheetURL) {
+      try {
+        await minioClient.removeObject(ITEM_IMAGES_BUCKET, existing.datasheetURL);
       } catch (err) {
         // don't fail the whole deletion if MinIO cleanup fails
         console.warn("MinIO image delete failed:", err);

@@ -39,27 +39,43 @@ services:
     restart: unless-stopped
     networks:
       - epicenter_network
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.epicenter-api.rule=Host(`epicenter.ecesoftwaretesting.byu.edu`) && PathPrefix(`/api`)
+      - traefik.http.routers.epicenter-api.entrypoints=websecure
+      - traefik.http.routers.epicenter-api.tls=true
+      - traefik.http.services.epicenter-api.loadbalancer.server.port=3000
 
   nginx:
     build:
       context: ./nginx
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.test
     container_name: epicenter_nginx
     depends_on:
       app:
         condition: service_started
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost/healthy | grep -q OK"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 40s
-    ports:
-      - "80:80"
-      - "443:443"
+    # healthcheck:
+    #   test: ["CMD-SHELL", "wget -qO- http://localhost/health | grep -q OK"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 12
+    #   start_period: 40s
+    expose:
+      - "80"
     networks:
       - epicenter_network
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.epicenter.rule=Host(`epicenter.ecesoftwaretesting.byu.edu`)
+      - traefik.http.routers.epicenter.entrypoints=websecure
+      - traefik.http.routers.epicenter.tls=true
+      - traefik.http.services.epicenter.loadbalancer.server.port=80
+      # If your frontend needs bigger uploads:
+      # - traefik.http.middlewares.site1-buffer.buffering.maxRequestBodyBytes=104857600
+      # - traefik.http.routers.site1.middlewares=site1-buffer
 
   db:
     image: postgres:16
@@ -87,9 +103,9 @@ services:
     image: minio/minio
     container_name: epicenter_minio
     restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    expose:
+      - "9000"
+      - "9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -123,6 +139,8 @@ services:
 networks:
   epicenter_network:
     driver: bridge
+  proxy:
+    external: true
 
 volumes:
   db_data:

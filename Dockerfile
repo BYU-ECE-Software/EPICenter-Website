@@ -31,11 +31,9 @@ FROM base AS migrator
 WORKDIR /app
 # We need node_modules (incl. devDeps for prisma CLI), code, and schema
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
+COPY ./prisma ./prisma
 COPY package.json ./
-COPY migrate.sh ./migrate.sh
-RUN chmod +x ./migrate.sh 
-ENTRYPOINT ["./migrate.sh"]
+CMD ["npx", "prisma", "migrate", "deploy"]
 
 
 
@@ -61,23 +59,26 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# COPY --from=builder /app/prisma ./prisma
+# COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Only need the generated Prisma Client, not the schema or CLI
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
-COPY --chown=nextjs:nodejs entry.sh ./entry.sh
-RUN chmod +x /app/entry.sh
+# COPY --chown=nextjs:nodejs entry.sh ./entry.sh
+# RUN chmod +x /app/entry.sh
 
 RUN apk add --no-cache postgresql-client curl
 
 USER nextjs
-
 EXPOSE 3000
-
 ENV PORT=3000
 # set hostname to localhost
 ENV HOSTNAME="0.0.0.0"
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
-ENTRYPOINT [ "./entry.sh" ]
+# ENTRYPOINT [ "./entry.sh" ]
+
+CMD ["node", "server.js"]

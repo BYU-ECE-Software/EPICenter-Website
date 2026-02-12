@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import Print3DRequestFormModal from "@/components/forms/Print3DRequestForm";
 import type { Print3DFormValues } from "@/components/forms/Print3DRequestForm";
 import PcbMillRequestFormModal from "@/components/forms/PCBMillRequestForm";
@@ -20,6 +21,9 @@ export default function Home() {
   const [pcbModalOpen, setPcbModalOpen] = useState(false);
   const [laserModalOpen, setLaserModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Get URL for Inventory Request Form from .env file
+  const INVENTORY_REQUEST_URL = process.env.NEXT_PUBLIC_INVENTORY_REQUEST_URL;
 
   // 3D Print Modal Form
   const [printForm, setPrintForm] = useState<Print3DFormValues>({
@@ -276,57 +280,82 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-[calc(100vh-8rem)] bg-gradient-to-br from-byu-royal/5 via-white to-byu-navy/5 flex items-center justify-center px-4 py-12">
-      <div className="w-full text-center">
-        {/* Little badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-byu-navy text-white text-xs tracking-wide uppercase mb-4">
-          <span className="h-2 w-2 rounded-full bg-amber-300 animate-pulse" />
-          Under construction
+    <main className="min-h-[calc(100vh-8rem)] bg-white flex items-start justify-center">
+      <div className="w-full">
+        {/* Big placeholder hero */}
+        <div
+          className="w-full bg-gray-200 flex items-center justify-center text-gray-600 text-sm sm:text-base font-medium
+                      h-32 sm:h-[calc(100vh-8rem-15rem)]"
+        >
+          <span>Spacer for shop picture/logo</span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-byu-navy tracking-tight">
-          Welcome to the <span className="text-byu-royal">EPICenter</span> ⚡
-        </h1>
+        {/* Request icon buttons */}
+        <div className="mt-6 sm:mt-10 px-4 sm:px-0">
+          <div className="mx-auto max-w-5xl grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-8 place-items-center">
+            <button
+              type="button"
+              onClick={() => setPrintModalOpen(true)}
+              className="group flex flex-col items-center gap-1 sm:gap-2 cursor-pointer"
+            >
+              <img
+                src="/3DPrint.png"
+                alt="3D Print Request"
+                className="h-20 w-20 sm:h-26 sm:w-26 object-contain transition group-hover:scale-105"
+              />
+              <span className="text-xs sm:text-sm font-bold text-black text-center">
+                3D Print Request
+              </span>
+            </button>
 
-        <p className="mt-4 text-sm sm:text-base text-gray-700 max-w-2xl mx-auto">
-          This will be the home for ECE shop orders, inventory, and other
-          engineering goodies. For now, it&apos;s basically a very fancy
-          &quot;Coming Soon&quot; page while we plug in all the wires.
-        </p>
+            <button
+              type="button"
+              onClick={() => setPcbModalOpen(true)}
+              className="group flex flex-col items-center gap-1 sm:gap-2 cursor-pointer"
+            >
+              <img
+                src="/PCBmill.png"
+                alt="PCB Mill Request"
+                className="h-20 w-20 sm:h-26 sm:w-26 object-contain transition group-hover:scale-105"
+              />
+              <span className="text-xs sm:text-sm font-bold text-black text-center">
+                PCB Mill Request
+              </span>
+            </button>
 
-        {/* Silly status line */}
-        <div className="mt-6 text-xs sm:text-sm text-gray-600">
-          <p>Current status: ⚙️ calibrating flux capacitors…</p>
-          <p className="mt-1 italic">
-            If you&apos;re seeing this, the engineers are still tinkering.
-          </p>
-        </div>
+            <button
+              type="button"
+              onClick={() => setLaserModalOpen(true)}
+              className="group flex flex-col items-center gap-1 sm:gap-2 cursor-pointer"
+            >
+              <img
+                src="/laserCut.png"
+                alt="Laser Cut Request"
+                className="h-20 w-20 sm:h-26 sm:w-26 object-contain transition group-hover:scale-105"
+              />
+              <span className="text-xs sm:text-sm font-bold text-byu-black text-center">
+                Laser Cut Request
+              </span>
+            </button>
 
-        {/* Request buttons */}
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <button
-            type="button"
-            className="px-5 py-3 rounded-md border border-byu-royal text-byu-royal bg-white hover:bg-byu-royal hover:text-white transition text-sm font-medium"
-            onClick={() => setPrintModalOpen(true)}
-          >
-            3D Print Request
-          </button>
-
-          <button
-            type="button"
-            className="px-5 py-3 rounded-md border border-byu-royal text-byu-royal bg-white hover:bg-byu-royal hover:text-white transition text-sm font-medium"
-            onClick={() => setPcbModalOpen(true)}
-          >
-            PCB Mill Request
-          </button>
-
-          <button
-            type="button"
-            className="px-5 py-3 rounded-md border border-byu-royal text-byu-royal bg-white hover:bg-byu-royal hover:text-white transition text-sm font-medium"
-            onClick={() => setLaserModalOpen(true)}
-          >
-            Laser Cut Request
-          </button>
+            {INVENTORY_REQUEST_URL && (
+              <Link
+                href={INVENTORY_REQUEST_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col items-center gap-1 sm:gap-2"
+              >
+                <img
+                  src="/partsRequest.png"
+                  alt="Parts Request Form"
+                  className="h-20 w-20 sm:h-26 sm:w-26 object-contain transition group-hover:scale-105"
+                />
+                <span className="text-xs sm:text-sm font-bold text-byu-black text-center">
+                  Parts Request Form
+                </span>
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* 3D Print Request Modal */}

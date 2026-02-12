@@ -4,22 +4,20 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useRole } from "@/app/providers/RoleProvider";
 
-export default function ProjectRequestPage() {
+export default function AdminPage() {
   const { isEmployee } = useRole();
   const router = useRouter();
 
   useEffect(() => {
-    if (isEmployee) {
-      router.replace("/3Dprint");
+    if (!isEmployee) {
+      router.replace("/");
     }
   }, [isEmployee, router]);
+
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>Student Project Requests</h1>
-      <p>
-        This page will be what students see for their individual project
-        requests
-      </p>
+    <main className="min-h-[calc(100vh-8rem)] bg-white px-12 py-8">
+      <h1 className="text-3xl font-bold text-byu-navy">Admin</h1>
+      <p>Nothing here yet</p>
     </main>
   );
 }

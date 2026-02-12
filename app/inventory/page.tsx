@@ -452,7 +452,7 @@ export default function InventoryPage() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <PrimaryButton label="Go to Inventory Request Form" />
+            <PrimaryButton label="Go to Parts Request Form" />
           </Link>
         )}
 

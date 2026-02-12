@@ -11,6 +11,7 @@ import CountBadge from "./CountBadge";
 const HeaderBar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [projectRequestsOpen, setProjectRequestsOpen] = useState(false);
+  const [otherResourcesOpen, setOtherResourcesOpen] = useState(false);
 
   // refs + measured left padding for desktop white nav
   const logoRef = useRef<HTMLAnchorElement | null>(null);
@@ -23,6 +24,13 @@ const HeaderBar: React.FC = () => {
   // Project Requests dropdown refs
   const projectRequestsMobileWrapRef = useRef<HTMLDivElement | null>(null);
   const projectRequestsDesktopWrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Other Resources dropdown refs
+  const otherResourcesMobileWrapRef = useRef<HTMLDivElement | null>(null);
+  const otherResourcesDesktopWrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Get URL for Inventory Request Form from .env file
+  const INVENTORY_REQUEST_URL = process.env.NEXT_PUBLIC_INVENTORY_REQUEST_URL;
 
   // Compute Count of Items in Cart
   // This is total quantity, not just unique items. Up for debate?
@@ -56,6 +64,13 @@ const HeaderBar: React.FC = () => {
       onEscapeKey: () => setProjectRequestsOpen(false),
     },
   );
+
+  // Close the Other Resources dropdown by clicking anywhere outside of it
+  useClickOutside([otherResourcesMobileWrapRef, otherResourcesDesktopWrapRef], {
+    enabled: otherResourcesOpen,
+    onOutsideClick: () => setOtherResourcesOpen(false),
+    onEscapeKey: () => setOtherResourcesOpen(false),
+  });
 
   return (
     <div className="w-full sticky top-0 z-50">
@@ -199,7 +214,7 @@ const HeaderBar: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setProjectRequestsOpen((open) => !open)}
-                  className={`flex items-center justify-between px-6 py-4 text-left hover:bg-[#FAFAFA] ${
+                  className={`flex items-center justify-between px-6 py-4 text-left hover:bg-[#FAFAFA] cursor-pointer ${
                     projectRequestsOpen ? "bg-[#FAFAFA]" : ""
                   }`}
                 >
@@ -256,6 +271,71 @@ const HeaderBar: React.FC = () => {
               </Link>
             )}
 
+            <div ref={otherResourcesMobileWrapRef}>
+              <button
+                type="button"
+                onClick={() => setOtherResourcesOpen((open) => !open)}
+                className={`flex items-center justify-between px-6 py-4 text-left hover:bg-[#FAFAFA] cursor-pointer ${
+                  otherResourcesOpen ? "bg-[#FAFAFA]" : ""
+                }`}
+              >
+                <span>Other Resources</span>
+                <FiChevronDown
+                  className="w-4 h-4 text-byu-navy"
+                  aria-hidden="true"
+                />
+              </button>
+
+              {otherResourcesOpen && (
+                <div className="flex flex-col text-sm">
+                  <Link
+                    href="/info"
+                    onClick={() => {
+                      setOtherResourcesOpen(false);
+                      setMobileOpen(false);
+                    }}
+                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                  >
+                    Information & Resources
+                  </Link>
+                  <Link
+                    href="/classKits"
+                    onClick={() => {
+                      setOtherResourcesOpen(false);
+                      setMobileOpen(false);
+                    }}
+                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                  >
+                    Class Kits
+                  </Link>
+                  <Link
+                    href="/trainings"
+                    onClick={() => {
+                      setOtherResourcesOpen(false);
+                      setMobileOpen(false);
+                    }}
+                    className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                  >
+                    Trainings
+                  </Link>
+                  {INVENTORY_REQUEST_URL && (
+                    <Link
+                      href={INVENTORY_REQUEST_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        setOtherResourcesOpen(false);
+                        setMobileOpen(false);
+                      }}
+                      className="px-10 py-2 text-left text-byu-navy hover:bg-[#FAFAFA]"
+                    >
+                      Parts Request Form
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
+
             {isEmployee && (
               <Link
                 href="/loans"
@@ -283,6 +363,16 @@ const HeaderBar: React.FC = () => {
                 className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
               >
                 Groups
+              </Link>
+            )}
+
+            {isEmployee && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileOpen(false)}
+                className="px-6 py-4 text-left hover:bg-[#FAFAFA]"
+              >
+                Admin
               </Link>
             )}
           </nav>
@@ -324,7 +414,7 @@ const HeaderBar: React.FC = () => {
             <div className="relative" ref={projectRequestsDesktopWrapRef}>
               <button
                 type="button"
-                className={`px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover inline-flex items-center gap-2 ${
+                className={`px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover inline-flex items-center gap-2 cursor-pointer ${
                   projectRequestsOpen ? "bg-[#FAFAFA] nav-link-active" : ""
                 }`}
                 onClick={() => setProjectRequestsOpen((open) => !open)}
@@ -372,6 +462,62 @@ const HeaderBar: React.FC = () => {
             </Link>
           )}
 
+          {/* Other Resources */}
+          <div className="relative" ref={otherResourcesDesktopWrapRef}>
+            <button
+              type="button"
+              className={`px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover inline-flex items-center gap-2 cursor-pointer ${
+                otherResourcesOpen ? "bg-[#FAFAFA] nav-link-active" : ""
+              }`}
+              onClick={() => setOtherResourcesOpen((open) => !open)}
+            >
+              <span>Other Resources</span>
+              <FiChevronDown
+                className="w-3 h-3 text-byu-navy"
+                aria-hidden="true"
+              />
+            </button>
+
+            {otherResourcesOpen && (
+              <div className="absolute left-0 top-full mt-0 w-64 bg-white border border-gray-200 shadow-lg">
+                <Link
+                  href="/info"
+                  onClick={() => setOtherResourcesOpen(false)}
+                  className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                >
+                  Information and Resources
+                </Link>
+                <Link
+                  href="/classKits"
+                  onClick={() => setOtherResourcesOpen(false)}
+                  className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                >
+                  Class Kits
+                </Link>
+                <Link
+                  href="/trainings"
+                  onClick={() => setOtherResourcesOpen(false)}
+                  className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                >
+                  Trainings
+                </Link>
+
+                {/* Inventory Request Form - opens external link */}
+                {INVENTORY_REQUEST_URL && (
+                  <Link
+                    href={INVENTORY_REQUEST_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setOtherResourcesOpen(false)}
+                    className="block w-full text-left px-6 py-3 text-byu-navy hover:bg-gray-50"
+                  >
+                    Parts Request Form
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Loans tab (employee only) */}
           {isEmployee && (
             <Link
@@ -399,6 +545,16 @@ const HeaderBar: React.FC = () => {
               className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
             >
               Groups
+            </Link>
+          )}
+
+          {/* Admin tab (employee only) */}
+          {isEmployee && (
+            <Link
+              href="/admin"
+              className="px-8 py-4 hover:bg-[#FAFAFA] nav-link-hover"
+            >
+              Admin
             </Link>
           )}
         </div>

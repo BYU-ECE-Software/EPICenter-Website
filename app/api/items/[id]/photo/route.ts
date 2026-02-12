@@ -10,7 +10,7 @@ function streamToBuffer(stream: Readable): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     stream.on("data", (c) =>
-      chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c))
+      chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)),
     );
     stream.on("end", () => resolve(Buffer.concat(chunks)));
     stream.on("error", reject);
@@ -20,7 +20,7 @@ function streamToBuffer(stream: Readable): Promise<Buffer> {
 // Load an item’s image from MinIO and return it directly to the browser
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const id = parseInt((await params).id, 10);
@@ -67,7 +67,7 @@ export async function GET(
     console.error("Item photo GET failed:", err);
     return NextResponse.json(
       { error: err?.message ?? "Failed to fetch item photo" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -7,6 +7,7 @@ import PrimaryButton from "@/components/PrimaryButton";
 import FormModal from "@/components/FormModal";
 import DataTable from "@/components/DataTable";
 import RowActionMenu from "@/components/RowActionMenu";
+import Toast, { type ToastType } from "@/components/Toast";
 import ConfirmModal from "@/components/ConfirmModal";
 import { useRole } from "@/app/providers/RoleProvider";
 import { useRouter } from "next/navigation";
@@ -86,6 +87,17 @@ export default function GroupsPage() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
   const groupDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Toast State
+  const [toast, setToast] = useState<{
+    type: ToastType;
+    title: string;
+    message: string;
+  } | null>(null);
+
+  const showToast = (type: ToastType, title: string, message: string) => {
+    setToast({ type, title, message });
+  };
 
   // Reusable reload helper (so we can refresh after update)
   const reloadGroups = async (opts?: { silent?: boolean }) => {
@@ -318,17 +330,21 @@ export default function GroupsPage() {
 
       if (groupModalMode === "create") {
         await createPurchasingGroup(payload);
+
+        showToast("success", "Group created", `"${payload.name}" was added.`);
       } else {
         // EDIT mode
         if (!editingRow?.id) throw new Error("No group selected for editing.");
         await updatePurchasingGroups(editingRow.id, payload);
+
+        showToast("success", "Group updated", `"${payload.name}" was saved.`);
       }
 
       handleCloseGroupModal();
       await reloadGroups({ silent: true });
     } catch (err) {
       console.error(err);
-      alert("Failed to save purchasing group.");
+      showToast("error", "Save failed", "Could not save the group. Try again.");
     } finally {
       setSaving(false);
     }
@@ -377,9 +393,19 @@ export default function GroupsPage() {
 
       closeRemoveConfirm();
       await reloadGroups({ silent: true });
+
+      showToast(
+        "success",
+        "Group removed",
+        `"${rowToRemove.name ?? "Group"}" was deleted.`,
+      );
     } catch (err) {
       console.error("Delete group failed:", err);
-      alert("Failed to delete group.");
+      showToast(
+        "error",
+        "Delete failed",
+        "Could not remove the group. Try again.",
+      );
     } finally {
       setRemoving(false);
     }
@@ -408,6 +434,19 @@ export default function GroupsPage() {
 
   return (
     <main className="min-h-[calc(100vh-8rem)] bg-white px-12 py-8">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 w-[min(420px,calc(100vw-2rem))]">
+          <Toast
+            type={toast.type}
+            title={toast.title}
+            message={toast.message}
+            onClose={() => setToast(null)}
+            duration={4000}
+          />
+        </div>
+      )}
+
       {/* Page header row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold text-byu-navy">Groups</h1>

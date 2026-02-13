@@ -15,6 +15,7 @@ import {
   createPurchasingGroup,
   fetchPurchasingGroups,
   updatePurchasingGroups,
+  deletePurchasingGroups,
 } from "@/lib/api/purchaseGroupsApi";
 import type { PurchasingGroup } from "@/types/purchaseGroup";
 
@@ -368,10 +369,17 @@ export default function GroupsPage() {
   };
 
   const confirmRemove = async () => {
-    // no backend yet — just close
+    if (!rowToRemove?.id) return;
+
     setRemoving(true);
     try {
+      await deletePurchasingGroups(rowToRemove.id);
+
       closeRemoveConfirm();
+      await reloadGroups({ silent: true });
+    } catch (err) {
+      console.error("Delete group failed:", err);
+      alert("Failed to delete group.");
     } finally {
       setRemoving(false);
     }

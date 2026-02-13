@@ -37,7 +37,7 @@ export async function fetchPurchasingGroups(): Promise<PurchaseGroupsResponse> {
   return res.json();
 }
 
-// --------Update Equipment --------
+// --------Update Purchasing Groups --------
 export async function updatePurchasingGroups(
   id: number,
   payload: PurchasingGroupPayload,
@@ -49,5 +49,13 @@ export async function updatePurchasingGroups(
   });
   if (!res.ok)
     throw new Error((await res.text()) || "Failed to update purchase group");
+  return res.json();
+}
+
+// --------Delete Purchasing Groups --------
+export async function deletePurchasingGroups(id: number) {
+  const res = await fetch(`/api/purchaseGroups/${id}`, { method: "DELETE" });
+  if (!res.ok)
+    throw new Error((await res.text()) || "Failed to delete purchase group");
   return res.json();
 }

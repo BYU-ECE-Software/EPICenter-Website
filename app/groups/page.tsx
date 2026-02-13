@@ -11,11 +11,12 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { useRole } from "@/app/providers/RoleProvider";
 import { useRouter } from "next/navigation";
 import { FiPlus, FiEdit2, FiMoreVertical, FiTrash2 } from "react-icons/fi";
+import { createPurchasingGroup } from "@/lib/api/purchaseGroupsApi";
 
 // Eventually take this out and use the actual type file. The type just doesn't match this table yet. Once schema changes are made.
 type GroupRow = {
   id: number;
-  groupName: string;
+  name: string;
   supervisor: string;
   workTag: string;
   comments: string;
@@ -85,7 +86,7 @@ export default function GroupsPage() {
 
   // Group form values (single object for FormModal)
   const [groupForm, setGroupForm] = useState({
-    groupName: "",
+    name: "",
     supervisor: "",
     workTag: "",
     comments: "",
@@ -106,42 +107,42 @@ export default function GroupsPage() {
   const [groups] = useState<GroupRow[]>([
     {
       id: 1,
-      groupName: "Chemistry Stockroom",
+      name: "Chemistry Stockroom",
       supervisor: "Dr. Jensen",
       workTag: "GR12345",
       comments: "Handles general chemical inventory requests.",
     },
     {
       id: 2,
-      groupName: "Physics Lab Support",
+      name: "Physics Lab Support",
       supervisor: "M. Alvarez",
       workTag: "AC54321",
       comments: "Priority: labs 100–200 level.",
     },
     {
       id: 3,
-      groupName: "Biohazard Supplies",
+      name: "Biohazard Supplies",
       supervisor: "S. Kim",
       workTag: "GR77777",
       comments: "",
     },
     {
       id: 4,
-      groupName: "Fun Lab",
+      name: "Fun Lab",
       supervisor: "",
       workTag: "GR77977",
       comments: "",
     },
     {
       id: 5,
-      groupName: "Boring Lab",
+      name: "Boring Lab",
       supervisor: "",
       workTag: "GR87777",
       comments: "",
     },
     {
       id: 6,
-      groupName: "Random Lab",
+      name: "Random Lab",
       supervisor: "",
       workTag: "GR87727",
       comments: "",
@@ -325,17 +326,36 @@ export default function GroupsPage() {
 
   // Placeholder submit New Group Creation to backend
   const handleGroupModalSubmit = async () => {
-    handleCloseGroupModal();
+    setSaving(true);
+
+    try {
+      if (groupModalMode === "create") {
+        await createPurchasingGroup({
+          name: groupForm.name.trim(),
+          supervisor: groupForm.supervisor?.trim() || null,
+          workTag: groupForm.workTag.trim(),
+          comments: groupForm.comments?.trim() || null,
+        });
+      }
+
+      // later we will add edit logic here
+
+      handleCloseGroupModal();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save purchasing group.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Whether or not the Group Modal submission should be disabled
-  const isSubmitDisabled =
-    !groupForm.groupName.trim() || !groupForm.workTag.trim();
+  const isSubmitDisabled = !groupForm.name.trim() || !groupForm.workTag.trim();
 
   // reset all fields in the group modal form
   const resetGroupForm = () => {
     setGroupForm({
-      groupName: "",
+      name: "",
       supervisor: "",
       workTag: "",
       comments: "",
@@ -345,7 +365,7 @@ export default function GroupsPage() {
   // fill the fields in the group form with current data when editing a group
   const fillGroupFormFromRow = (row: GroupRow) => {
     setGroupForm({
-      groupName: row.groupName ?? "",
+      name: row.name ?? "",
       supervisor: row.supervisor ?? "",
       workTag: row.workTag ?? "",
       comments: row.comments ?? "",
@@ -375,7 +395,7 @@ export default function GroupsPage() {
 
   // columns in the data table
   const columns = [
-    { key: "groupName", header: "Group Name" },
+    { key: "name", header: "Group Name" },
     { key: "supervisor", header: "Supervisor" },
     { key: "workTag", header: "Work Tag" },
     { key: "comments", header: "Comments" },
@@ -517,7 +537,7 @@ export default function GroupsPage() {
                               key={g.id}
                               className="inline-flex items-center gap-2 rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-800"
                             >
-                              <span className="font-medium">{g.groupName}</span>
+                              <span className="font-medium">{g.name}</span>
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -607,7 +627,7 @@ export default function GroupsPage() {
                                       className="h-4 w-4 accent-byu-royal"
                                     />
                                     <span className="text-sm text-gray-900 truncate">
-                                      {g.groupName}
+                                      {g.name}
                                     </span>
                                   </div>
 
@@ -838,7 +858,7 @@ export default function GroupsPage() {
         setValues={setGroupForm}
         fields={[
           {
-            key: "groupName",
+            key: "name",
             label: "Group Name",
             required: true,
             colSpan: 2,
@@ -869,8 +889,8 @@ export default function GroupsPage() {
         open={removeOpen}
         title="Remove group?"
         message={
-          rowToRemove?.groupName
-            ? `Are you sure you want to remove "${rowToRemove.groupName}"?`
+          rowToRemove?.name
+            ? `Are you sure you want to remove "${rowToRemove.name}"?`
             : "Are you sure you want to remove this group?"
         }
         confirmLabel="Remove"

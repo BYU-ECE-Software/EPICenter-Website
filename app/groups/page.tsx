@@ -14,6 +14,7 @@ import { FiPlus, FiEdit2, FiMoreVertical, FiTrash2 } from "react-icons/fi";
 import {
   createPurchasingGroup,
   fetchPurchasingGroups,
+  updatePurchasingGroups,
 } from "@/lib/api/purchaseGroupsApi";
 import type { PurchasingGroup } from "@/types/purchaseGroup";
 
@@ -23,9 +24,9 @@ function RowActions({
   onEdit,
   onRemove,
 }: {
-  row: any;
-  onEdit: (row: any) => void;
-  onRemove: (row: any) => void;
+  row: PurchasingGroup;
+  onEdit: (row: PurchasingGroup) => void;
+  onRemove: (row: PurchasingGroup) => void;
 }) {
   return (
     <div className="flex items-center justify-end">
@@ -300,7 +301,6 @@ export default function GroupsPage() {
     setEditingRow(null);
     setGroupModalOpen(false);
     setGroupModalMode("create");
-    setSaving(false);
   };
 
   // Placeholder submit New Group Creation to backend
@@ -308,16 +308,20 @@ export default function GroupsPage() {
     setSaving(true);
 
     try {
-      if (groupModalMode === "create") {
-        await createPurchasingGroup({
-          name: groupForm.name.trim(),
-          supervisor: groupForm.supervisor?.trim() || null,
-          workTag: groupForm.workTag.trim(),
-          comments: groupForm.comments?.trim() || null,
-        });
-      }
+      const payload = {
+        name: groupForm.name.trim(),
+        supervisor: groupForm.supervisor?.trim() || null,
+        workTag: groupForm.workTag.trim(),
+        comments: groupForm.comments?.trim() || null,
+      };
 
-      // later we will add edit logic here
+      if (groupModalMode === "create") {
+        await createPurchasingGroup(payload);
+      } else {
+        // EDIT mode
+        if (!editingRow?.id) throw new Error("No group selected for editing.");
+        await updatePurchasingGroups(editingRow.id, payload);
+      }
 
       handleCloseGroupModal();
       await reloadGroups({ silent: true });

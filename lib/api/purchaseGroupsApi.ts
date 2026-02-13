@@ -36,3 +36,18 @@ export async function fetchPurchasingGroups(): Promise<PurchaseGroupsResponse> {
 
   return res.json();
 }
+
+// --------Update Equipment --------
+export async function updatePurchasingGroups(
+  id: number,
+  payload: PurchasingGroupPayload,
+) {
+  const res = await fetch(`/api/purchaseGroups/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok)
+    throw new Error((await res.text()) || "Failed to update purchase group");
+  return res.json();
+}

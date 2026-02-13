@@ -26,7 +26,9 @@ export async function GET(request: NextRequest) {
             OR: [
               { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
               { workTag: { contains: q, mode: Prisma.QueryMode.insensitive } },
-              { supervisor: { contains: q, mode: Prisma.QueryMode.insensitive } },
+              {
+                supervisor: { contains: q, mode: Prisma.QueryMode.insensitive },
+              },
               { comments: { contains: q, mode: Prisma.QueryMode.insensitive } },
             ],
           }
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "Failed to fetch purchaseGroups" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -68,7 +70,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "name is required" }, { status: 400 });
     }
     if (typeof workTag !== "string" || workTag.trim() === "") {
-      return NextResponse.json({ error: "workTag is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "workTag is required" },
+        { status: 400 },
+      );
     }
 
     const purchasingGroup = await prisma.purchasingGroup.create({
@@ -84,7 +89,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "Failed to create purchaseGroup" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -11,16 +11,11 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { useRole } from "@/app/providers/RoleProvider";
 import { useRouter } from "next/navigation";
 import { FiPlus, FiEdit2, FiMoreVertical, FiTrash2 } from "react-icons/fi";
-import { createPurchasingGroup } from "@/lib/api/purchaseGroupsApi";
-
-// Eventually take this out and use the actual type file. The type just doesn't match this table yet. Once schema changes are made.
-type GroupRow = {
-  id: number;
-  name: string;
-  supervisor: string;
-  workTag: string;
-  comments: string;
-};
+import {
+  createPurchasingGroup,
+  fetchPurchasingGroups,
+} from "@/lib/api/purchaseGroupsApi";
+import type { PurchasingGroup } from "@/types/purchaseGroup";
 
 // Action Buttons (edit and delete) that go in the last column of the data table.
 function RowActions({
@@ -58,6 +53,12 @@ export default function GroupsPage() {
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
 
+  // DB groups
+  const [groups, setGroups] = useState<PurchasingGroup[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -69,20 +70,41 @@ export default function GroupsPage() {
   type GroupModalMode = "create" | "edit";
   const [groupModalMode, setGroupModalMode] =
     useState<GroupModalMode>("create");
-  const [editingRow, setEditingRow] = useState<GroupRow | null>(null);
+  const [editingRow, setEditingRow] = useState<PurchasingGroup | null>(null);
   const isEdit = groupModalMode === "edit";
   const modalTitle = isEdit ? "Edit Group" : "Create New Group";
   const modalSaveLabel = isEdit ? "Save Changes" : "Create Group";
 
   // Remove Confirm Modal State
   const [removeOpen, setRemoveOpen] = useState(false);
-  const [rowToRemove, setRowToRemove] = useState<GroupRow | null>(null);
+  const [rowToRemove, setRowToRemove] = useState<PurchasingGroup | null>(null);
   const [removing, setRemoving] = useState(false);
 
   // Generate Group Report Modal state
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
   const groupDropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Reusable reload helper (so we can refresh after update)
+  const reloadGroups = async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent ?? false;
+
+    if (silent) setRefreshing(true);
+    else setLoading(true);
+
+    setLoadError(null);
+
+    try {
+      const res = await fetchPurchasingGroups();
+      setGroups(res.data);
+    } catch (err: any) {
+      console.error("Failed to fetch groups:", err);
+      setLoadError(err?.message ?? "Failed to fetch groups");
+    } finally {
+      if (silent) setRefreshing(false);
+      else setLoading(false);
+    }
+  };
 
   // Group form values (single object for FormModal)
   const [groupForm, setGroupForm] = useState({
@@ -103,55 +125,6 @@ export default function GroupsPage() {
     endDate: "",
   });
 
-  // Temp dummy data
-  const [groups] = useState<GroupRow[]>([
-    {
-      id: 1,
-      name: "Chemistry Stockroom",
-      supervisor: "Dr. Jensen",
-      workTag: "GR12345",
-      comments: "Handles general chemical inventory requests.",
-    },
-    {
-      id: 2,
-      name: "Physics Lab Support",
-      supervisor: "M. Alvarez",
-      workTag: "AC54321",
-      comments: "Priority: labs 100–200 level.",
-    },
-    {
-      id: 3,
-      name: "Biohazard Supplies",
-      supervisor: "S. Kim",
-      workTag: "GR77777",
-      comments: "",
-    },
-    {
-      id: 4,
-      name: "Fun Lab",
-      supervisor: "",
-      workTag: "GR77977",
-      comments: "",
-    },
-    {
-      id: 5,
-      name: "Boring Lab",
-      supervisor: "",
-      workTag: "GR87777",
-      comments: "",
-    },
-    {
-      id: 6,
-      name: "Random Lab",
-      supervisor: "",
-      workTag: "GR87727",
-      comments: "",
-    },
-  ]);
-
-  // Optional error banner placeholder
-  const [loadError] = useState<string | null>(null);
-
   // Role for student vs employee auth
   const router = useRouter();
   const { role } = useRole();
@@ -161,6 +134,12 @@ export default function GroupsPage() {
   useEffect(() => {
     if (!isEmployee) router.replace("/");
   }, [isEmployee, router]);
+
+  // Load group in table on page load
+  useEffect(() => {
+    if (!isEmployee) return;
+    reloadGroups();
+  }, [isEmployee]);
 
   // Open Generate Report Modal
   const openReportModal = () => setReportModalOpen(true);
@@ -308,7 +287,7 @@ export default function GroupsPage() {
   };
 
   // Open Edit Group Modal
-  const openEditGroup = (row: GroupRow) => {
+  const openEditGroup = (row: PurchasingGroup) => {
     setGroupModalMode("edit");
     setEditingRow(row);
     fillGroupFormFromRow(row);
@@ -341,6 +320,7 @@ export default function GroupsPage() {
       // later we will add edit logic here
 
       handleCloseGroupModal();
+      await reloadGroups({ silent: true });
     } catch (err) {
       console.error(err);
       alert("Failed to save purchasing group.");
@@ -363,7 +343,7 @@ export default function GroupsPage() {
   };
 
   // fill the fields in the group form with current data when editing a group
-  const fillGroupFormFromRow = (row: GroupRow) => {
+  const fillGroupFormFromRow = (row: PurchasingGroup) => {
     setGroupForm({
       name: row.name ?? "",
       supervisor: row.supervisor ?? "",
@@ -373,7 +353,7 @@ export default function GroupsPage() {
   };
 
   // Remove Confirmation Handlers
-  const openRemoveConfirm = (row: GroupRow) => {
+  const openRemoveConfirm = (row: PurchasingGroup) => {
     setRowToRemove(row);
     setRemoveOpen(true);
   };
@@ -404,7 +384,7 @@ export default function GroupsPage() {
       header: "",
       headerClassName: "w-[1%]",
       cellClassName: "text-right",
-      render: (row: GroupRow) => (
+      render: (row: PurchasingGroup) => (
         <RowActions
           row={row}
           onEdit={openEditGroup}
@@ -459,7 +439,7 @@ export default function GroupsPage() {
       )}
 
       <div className="mb-6">
-        <DataTable data={groups} loading={false} columns={columns} />
+        <DataTable data={groups} loading={loading} columns={columns} />
       </div>
 
       <Pagination

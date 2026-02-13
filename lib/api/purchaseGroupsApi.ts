@@ -1,4 +1,7 @@
-import type { PurchasingGroupPayload } from "@/types/purchaseGroup";
+import type {
+  PurchasingGroup,
+  PurchasingGroupPayload,
+} from "@/types/purchaseGroup";
 
 // -------- Create Purchasing Group --------
 export async function createPurchasingGroup(payload: PurchasingGroupPayload) {
@@ -12,6 +15,24 @@ export async function createPurchasingGroup(payload: PurchasingGroupPayload) {
     const text = await res.text();
     throw new Error(text || "Failed to create purchasing group");
   }
+
+  return res.json();
+}
+
+// -------- Get Purchasing Groups --------
+type PurchaseGroupsResponse = {
+  data: PurchasingGroup[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  q: string;
+};
+
+export async function fetchPurchasingGroups(): Promise<PurchaseGroupsResponse> {
+  const res = await fetch("/api/purchaseGroups", { method: "GET" });
+  if (!res.ok)
+    throw new Error((await res.text()) || "Failed to fetch purchase groups");
 
   return res.json();
 }
